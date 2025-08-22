@@ -69,7 +69,7 @@ def index():
                                chosen=chosen, exam_date=exam_date,
                                exam_time=exam_time, dept=dept, year=year)
 
-    return render_template("index.html", halls=HALLS.keys(), departments=DEPARTMENTS)
+    return render_template("seatallot_new.html", halls=HALLS.keys(), departments=DEPARTMENTS)
 
 
 if __name__ == "__main__":
