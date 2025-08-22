@@ -39,7 +39,7 @@
       background: #007bff;
       color: white;
       border: none;
-      padding: 10px 15px;
+      padding: 15px 20px;
       border-radius: 5px;
       cursor: pointer;
     }
@@ -70,11 +70,11 @@
   <div class="form-container">
     <form id="allotmentForm">
       <label for="date">Select Date:</label>
-      <input type="date" id="date" required>
+      <input type="text" id="date" required>
      
        <label for="year">Year:</label>
       <select id="year" required>
-        <option value="">-- Select Year --</option>
+        <option value="" disabled selected>-- Select Year --</option>
         <option>UG-I</option>
         <option>UG-II</option>
         <option>UG-III</option>
@@ -87,7 +87,7 @@
 
       <label for="dept">Department:</label>
       <select id="dept" required>
-        <option value="">-- Select Department --</option>
+        <option value="" disabled selected>-- Select Department --</option>
         <option>PHYS</option>
         <option>CS</option>
         <option>MTM</option>
@@ -110,7 +110,7 @@
       <input type="text" id="rolls" placeholder="Enter roll numbers or ranges" required>
 
       
-      <label for="room">Room Number:</label>
+      <label for="room">Alloted Room:</label>
       <input type="text" id="room" placeholder="Enter Room No" required>
       
       <button type="submit">Generate Allotment</button>
@@ -130,7 +130,7 @@
     <tbody></tbody>
   </table>
   <!-- Add in <head> -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 
@@ -138,14 +138,47 @@
   <script>
     // Reformat date on change
     flatpickr("#date", {
-    dateFormat: "d-m-Y"   // dd-mm-yyyy
+    dateFormat: "d-m-Y",   // dd-mm-yyyy
+     allowInput: true,
+    defaultDate: "today",
+    onReady: function(selectedDates, dateStr, instance) {
+      const yearElement = instance.currentYearElement;
+      const parent = yearElement.parentNode;
+      const dropdown = document.createElement("select");
+
+      function fillYears(centerYear) {
+        dropdown.innerHTML = "";
+        for (let y = centerYear; y <= centerYear + 80; y++) {
+          const opt = document.createElement("option");
+          opt.value = y;
+          opt.textContent = y;
+          if (y === instance.currentYear) opt.selected = true;
+          dropdown.appendChild(opt);
+        }
+      }
+
+      fillYears(instance.currentYear);
+
+      dropdown.addEventListener("change", function() {
+        instance.changeYear(parseInt(this.value));
+});
+
+      // when year changes via navigation, sync dropdown
+      instance.config.onYearChange = function(selectedDates, dateStr, inst) {
+        fillYears(inst.currentYear);
+        dropdown.value = inst.currentYear;
+      };
+
+      parent.replaceChild(dropdown, yearElement);
+      instance.currentYearElement = dropdown; // reassign for Flatpickr
+    }
   });
     const dateInput = document.getElementById("date");
     dateInput.addEventListener("change", function() {
       let rawDate = this.value; // yyyy-mm-dd
       if(rawDate){
         let parts = rawDate.split("-");
-        let formatted = `${parts[1]}-${parts[2]}-${parts[0]}`; // dd-mm-yyyy
+        let formatted = `${parts[0]}-${parts[1]}-${parts[2]}`; // dd-mm-yyyy
         this.setAttribute("data-formatted", formatted); // store separately
       }
     });
