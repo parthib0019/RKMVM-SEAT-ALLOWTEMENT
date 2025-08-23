@@ -95,68 +95,16 @@
 <body>
 
   <h1>Seat Allotment System</h1>
-<<<<<<< HEAD
-  
-  <div class="form-container">
-    <form id="allotmentForm" method="post" action="/">
-      <label for="date">Select Date:</label>
-      <input type="date" id="date" name="exam_date" required>
-     
-       <label for="year">Year:</label>
-      <select id="year" name="year" required>
-        <option value="">-- Select Year --</option>
-        <option>UG-I</option>
-        <option>UG-II</option>
-        <option>UG-III</option>
-        <option>UG-IV</option>
-        <option>PG-I</option>
-        <option>PG-II</option>
-        
-=======
->>>>>>> 0d7e928e5fe10b836b2404b323a65f8d4cd4371e
 
   <!-- history log -->
   <div id="history" class="history"></div>
 
-<<<<<<< HEAD
-      <label for="dept">Department:</label>
-      <select id="dept" name="Department" required>
-        <option value="">-- Select Department --</option>
-        <option>PHYS</option>
-        <option>CS</option>
-        <option>MTM</option>
-        <option>CHEM</option>
-        <option>MCB</option>
-        <option>INC</option>
-        <option>ECO</option>
-        <option>ZOO</option>
-        <option>BEN</option>
-        <option>ENG</option>
-        <option>SANS</option>
-        <option>HIS</option>
-        <option>PHIL</option>
-        <option>POLS</option>
-      </select>
-      
-     
-      
-      <label for="rolls">Roll Numbers (e.g. 101,105-110,115):</label>
-      <input type="text" id="rolls" placeholder="Enter roll numbers or ranges" name="roll_range" required>
-
-      
-      <label for="room">Room Number:</label>
-      <input type="text" id="room" placeholder="Enter Room No" name="hall" required>
-      
-      <button type="submit">Generate Allotment</button>
-    </form>
-=======
   <!-- form container -->
   <div id="formsContainer" class="form-container"></div>
 
   <div class="btnbar">
     <button type="button" id="addForm">Add Another Department</button>
     <button type="button" id="generateAllotment">Generate Allotment</button>
->>>>>>> 0d7e928e5fe10b836b2404b323a65f8d4cd4371e
   </div>
 
   <table id="resultTable" style="display:none;">
@@ -289,48 +237,6 @@
       const tbody = document.querySelector("#resultTable tbody");
       tbody.innerHTML = "";
 
-<<<<<<< HEAD
-    let allottedRolls = [];
-
-    // Parse input like 101,102,105-110
-    const parts = rollInput.split(",");
-    for (let part of parts) {
-    part = part.trim();
-    if (part.includes("-")) {
-      let [start, end] = part.split("-").map(Number);
-      if (!isNaN(start) && !isNaN(end)) {
-        for (let i = start; i <= end; i++) {
-          allottedRolls.push(i);
-        }
-      }
-    } else {
-      let roll = parseInt(part);
-      if (!isNaN(roll)) {
-        allottedRolls.push(roll);
-        }
-      }
-    }
-
-    if (allottedRolls.length === 0) {
-      alert("Please enter valid roll numbers.");
-      return;
-    }
-
-  /*// Show in table
-  const table = document.getElementById("resultTable");
-  const tbody = table.querySelector("tbody");
-  tbody.innerHTML = `
-    <tr>
-      <td>${date}</td>
-      <td>${dept}</td>
-      <td>${year}</td>
-      <td>${room}</td>
-      <td>${allottedRolls.join(", ")}</td>
-    </tr>
-  `;
-  table.style.display = "table";*/
-});
-=======
       allEntries.forEach(entry => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -342,7 +248,6 @@
         `;
         tbody.appendChild(tr);
       });
->>>>>>> 0d7e928e5fe10b836b2404b323a65f8d4cd4371e
 
       document.getElementById("resultTable").style.display = "table";
     });
