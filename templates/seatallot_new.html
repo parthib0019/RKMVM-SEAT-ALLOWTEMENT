@@ -23,11 +23,31 @@
       font-size: 14px;
       color: #444;
     }
-    .history p {
-      margin: 5px 0;
-      padding: 4px 6px;
+    .history-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding: 6px 8px;
       background: #eef4ff;
       border-left: 4px solid #007bff;
+      border-radius: 3px;
+    }
+    .history-entry span {
+      flex: 1;
+    }
+    .edit-form {
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .edit-form input, .edit-form select {
+      margin-bottom: 6px;
+      width: 100%;
+      padding: 5px;
     }
     .form-container {
       background: white;
@@ -50,9 +70,7 @@
       border: 1px solid #ccc;
       border-radius: 5px;
     }
-    .error {
-      border-color: #ff4d4f !important;
-    }
+    .error { border-color: #ff4d4f !important; }
     .warning {
       color: #ff4d4f;
       font-size: 12px;
@@ -63,33 +81,19 @@
       background: #007bff;
       color: white;
       border: none;
-      padding: 12px 18px;
+      padding: 6px 12px;
       border-radius: 5px;
       cursor: pointer;
-      margin: 5px;
+      margin: 3px;
     }
-    button:hover {
-      background: #0056b3;
-    }
-    .btnbar {
-      text-align: center;
-      margin-top: 20px;
-    }
+    button:hover { background: #0056b3; }
+    .btnbar { text-align: center; margin-top: 20px; }
     table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-      background: white;
+      width: 100%; margin-top: 20px;
+      border-collapse: collapse; background: white;
     }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background: #007bff;
-      color: white;
-    }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background: #007bff; color: white; }
   </style>
 </head>
 <body>
@@ -97,7 +101,7 @@
   <h1>Seat Allotment System</h1>
 
   <!-- history log -->
-  <div id="history" class="history"></div>
+  <div id="history" class="history" style="padding: 0;"></div>
 
   <!-- form container -->
   <div id="formsContainer" class="form-container"></div>
@@ -162,13 +166,6 @@
           <div class="warning roomWarn">Please enter a room</div>
         </form>
       `;
-
-      // Attach listeners to hide warning when user fixes input
-      const form = document.getElementById("currentForm");
-      form.querySelectorAll("input, select").forEach(el => {
-        el.addEventListener("input", () => clearWarning(el));
-        el.addEventListener("change", () => clearWarning(el));
-      });
     }
 
     function clearWarning(el) {
@@ -177,7 +174,7 @@
       if (warn) warn.style.display = "none";
     }
 
-    // Save current form data into history (with validation)
+    // Save current form into history
     function saveCurrentForm() {
       const form = document.getElementById("currentForm");
       if (!form) return false;
@@ -189,8 +186,6 @@
       const room = form.querySelector(".room");
 
       let valid = true;
-
-      // Reset warnings
       form.querySelectorAll(".warning").forEach(w => w.style.display = "none");
       form.querySelectorAll("input, select").forEach(el => el.classList.remove("error"));
 
@@ -202,41 +197,103 @@
 
       if (!valid) return false;
 
-      // Save entry
-      allEntries.push({ 
+      const entry = { 
         date: date.value.trim(), 
         year: year.value, 
         dept: dept.value, 
         room: room.value.trim(), 
         rollsRaw: rolls.value.trim() 
-      });
+      };
+      allEntries.push(entry);
 
-      // Add to history
-      const p = document.createElement("p");
-      p.textContent = `${dept.value} | ${year.value} | Room: ${room.value.trim()} | Rolls: ${rolls.value.trim()}`;
-      historyBox.appendChild(p);
-
-      formsContainer.innerHTML = ""; // clear form
+      addHistoryEntry(entry, allEntries.length - 1);
+      formsContainer.innerHTML = ""; 
       return true;
+    }
+
+    // Add history entry with edit option
+    function addHistoryEntry(entry, index) {
+      const container = document.createElement("div");
+
+      const viewDiv = document.createElement("div");
+      viewDiv.className = "history-entry";
+      const span = document.createElement("span");
+      span.textContent = `${entry.dept} | ${entry.year} | Room: ${entry.room} | Rolls: ${entry.rollsRaw}`;
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit";
+
+      viewDiv.appendChild(span);
+      viewDiv.appendChild(editBtn);
+
+      const editForm = document.createElement("div");
+      editForm.className = "edit-form";
+      editForm.innerHTML = `
+        <label>Date: <input type="text" class="edit-date" value="${entry.date}"></label>
+        <label>Year:
+          <select class="edit-year">
+            <option${entry.year=="UG-I"?" selected":""}>UG-I</option>
+            <option${entry.year=="UG-II"?" selected":""}>UG-II</option>
+            <option${entry.year=="UG-III"?" selected":""}>UG-III</option>
+            <option${entry.year=="UG-IV"?" selected":""}>UG-IV</option>
+            <option${entry.year=="PG-I"?" selected":""}>PG-I</option>
+            <option${entry.year=="PG-II"?" selected":""}>PG-II</option>
+          </select>
+        </label>
+        <label>Department:
+          <select class="edit-dept">
+            ${["PHYS","CS","MTM","CHEM","MCB","INC","ECO","ZOO","BEN","ENG","SANS","HIS","PHIL","POLS"]
+              .map(dep=>`<option${dep==entry.dept?" selected":""}>${dep}</option>`).join("")}
+          </select>
+        </label>
+        <label>Rolls: <input type="text" class="edit-rolls" value="${entry.rollsRaw}"></label>
+        <label>Room: <input type="text" class="edit-room" value="${entry.room}"></label>
+        <button class="saveEdit">Save</button>
+        <button class="cancelEdit">Cancel</button>
+      `;
+
+      // Toggle edit form
+      editBtn.onclick = () => {
+        viewDiv.style.display = "none";
+        editForm.style.display = "block";
+      };
+
+      editForm.querySelector(".saveEdit").onclick = () => {
+        const newEntry = {
+          date: editForm.querySelector(".edit-date").value.trim(),
+          year: editForm.querySelector(".edit-year").value,
+          dept: editForm.querySelector(".edit-dept").value,
+          rollsRaw: editForm.querySelector(".edit-rolls").value.trim(),
+          room: editForm.querySelector(".edit-room").value.trim()
+        };
+        allEntries[index] = newEntry;
+        span.textContent = `${newEntry.dept} | ${newEntry.year} | Room: ${newEntry.room} | Rolls: ${newEntry.rollsRaw}`;
+        editForm.style.display = "none";
+        viewDiv.style.display = "flex";
+      };
+
+      editForm.querySelector(".cancelEdit").onclick = () => {
+        editForm.style.display = "none";
+        viewDiv.style.display = "flex";
+      };
+
+      container.appendChild(viewDiv);
+      container.appendChild(editForm);
+      historyBox.appendChild(container);
     }
 
     // Start with first form
     createForm();
 
-    // Add Another Department
     document.getElementById("addForm").addEventListener("click", () => {
       if (saveCurrentForm()) {
         createForm();
       }
     });
 
-    // Generate Allotment
     document.getElementById("generateAllotment").addEventListener("click", () => {
-      if (!saveCurrentForm()) return; // save current form or stop
-
+      if (!saveCurrentForm()) return;
       const tbody = document.querySelector("#resultTable tbody");
       tbody.innerHTML = "";
-
       allEntries.forEach(entry => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -248,7 +305,6 @@
         `;
         tbody.appendChild(tr);
       });
-
       document.getElementById("resultTable").style.display = "table";
     });
   </script>
