@@ -68,12 +68,12 @@
   <h1>Seat Allotment System</h1>
   
   <div class="form-container">
-    <form id="allotmentForm">
+    <form id="allotmentForm" method="post" action="/">
       <label for="date">Select Date:</label>
-      <input type="date" id="date" required>
+      <input type="date" id="date" name="exam_date" required>
      
        <label for="year">Year:</label>
-      <select id="year" required>
+      <select id="year" name="year" required>
         <option value="">-- Select Year --</option>
         <option>UG-I</option>
         <option>UG-II</option>
@@ -86,7 +86,7 @@
       </select>
 
       <label for="dept">Department:</label>
-      <select id="dept" required>
+      <select id="dept" name="Department" required>
         <option value="">-- Select Department --</option>
         <option>PHYS</option>
         <option>CS</option>
@@ -107,11 +107,11 @@
      
       
       <label for="rolls">Roll Numbers (e.g. 101,105-110,115):</label>
-      <input type="text" id="rolls" placeholder="Enter roll numbers or ranges" required>
+      <input type="text" id="rolls" placeholder="Enter roll numbers or ranges" name="roll_range" required>
 
       
       <label for="room">Room Number:</label>
-      <input type="text" id="room" placeholder="Enter Room No" required>
+      <input type="text" id="room" placeholder="Enter Room No" name="hall" required>
       
       <button type="submit">Generate Allotment</button>
     </form>
@@ -185,7 +185,7 @@
       return;
     }
 
-  // Show in table
+  /*// Show in table
   const table = document.getElementById("resultTable");
   const tbody = table.querySelector("tbody");
   tbody.innerHTML = `
@@ -197,7 +197,7 @@
       <td>${allottedRolls.join(", ")}</td>
     </tr>
   `;
-  table.style.display = "table";
+  table.style.display = "table";*/
 });
 
   </script>
