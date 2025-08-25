@@ -49,7 +49,7 @@ def get_room_info(room_id):
                 for j in range(int(i)):
                     oneCol.append("e")
                 bench_arrangement.append(oneCol)
-                bench_arrangement.append(oneCol)
+                bench_arrangement.append(oneCol.copy())
             return bench_arrangement
         else:
             print(f"No room found with ID '{room_id}'")
@@ -82,8 +82,9 @@ def expand_rolls(roll_text: str):
 
 # ------------------ Allocation ------------------
 def can_place(seat_matrix, c, r, dept):
-    for dc in [-1, 0, 1]:
-        for dr in [-1, 0, 1]:
+    separation = 2
+    for dc in [-1*separation, 0, separation]:
+        for dr in [-1*separation, 0, separation]:
             if dc == 0 and dr == 0:
                 continue
             cc = c + dc
@@ -100,8 +101,7 @@ def allocate_seats(seat_matrix, rolls, dept, year):
     if not seat_matrix:
         return seat_matrix
 
-    # Work on a mutable list of rolls
-    rolls = list(rolls)
+    rolls = list(rolls)  # make mutable copy
 
     for c in range(len(seat_matrix)):          # loop over columns
         for r in range(len(seat_matrix[c])):   # loop benches in column
@@ -109,17 +109,9 @@ def allocate_seats(seat_matrix, rolls, dept, year):
                 for i in seat_matrix:print(i)
                 return seat_matrix
 
-            if seat_matrix[c][r] == "e":
-                if can_place(seat_matrix, c, r, dept):
-                    roll = rolls.pop(0)        # take the first roll and remove it
-                    seat_matrix[c][r] = (roll, dept, year)
-    
-
-    return seat_matrix
-
-
-
-
+            if seat_matrix[c][r] == "e" and can_place(seat_matrix, c, r, dept):
+                roll = rolls.pop(0)            # assign one roll only
+                seat_matrix[c][r] = (roll, dept, year)
 
 
 
