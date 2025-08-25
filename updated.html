@@ -1,0 +1,552 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seat Allotment System</title>
+  
+  
+  <!-- Flatpickr CSS (local file) -->
+  <link rel="stylesheet" href="flatpickr.min.css">
+
+  <!-- Flatpickr JS (CDN, or replace with local if you downloaded JS too) -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+ 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f4f6f9;
+      display: flex;
+      gap: 20px;
+    }
+    h1 {
+    position: relative;
+      text-align: center;
+      color: #333;
+    }
+    .history {
+      max-width: 300px;
+      margin: 10px 0;
+      padding: 0px;
+      background: #fff;
+      border-radius: 5px;
+      font-size: 14px;
+      color: #444;
+    }
+    .history-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding:0px;
+      background: #b6bfcf;
+      border-left: 4px solid #007bff;
+      border-radius: 3px;
+    }
+    .history-entry span {
+      flex: 1;
+    }
+    .edit-form {
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .edit-form input, .edit-form select {
+      margin-bottom: 6px;
+      width: 100%;
+      padding: 5px;
+    }
+    .edit-row {
+      display: flex;
+      gap: 10px;
+    }
+    .edit-row label {
+      flex: 1;
+    }
+    .form-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: 20px 0;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .error { border-color: #ff4d4f !important; }
+    .warning {
+      color: #ff4d4f;
+      font-size: 12px;
+      margin-bottom: 10px;
+      display: none;
+    }
+    .notice {
+      color: #ff4d4f;
+      font-size: 14px;
+      margin: 10px 0;
+      padding: 10px;
+      background: #ffe6e6;
+      border-radius: 5px;
+      display: none;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 3px;
+    }
+    button:hover { background: #0056b3; }
+        #actionButton.generate-allotment {
+      background: #06899228;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: 2px solid #ff6200;
+      animation: blink var(--blink-speed, 2s) infinite;
+    }
+    #actionButton.generate-allotment:hover {
+      background: #cc4e00;
+      border: 5px solid #cc4e00;
+      animation: none;
+    }
+    @keyframes blink {
+      0% { border-color: #ff6200; }
+      50% { border-color: #007bff; }
+      100% { border-color: #ff6200; }
+    }
+    .saveEdit::before {
+      content: "💾 ";
+      font-size: 14px;
+      aria-hidden: true;
+    }
+    .btnbar { text-align: center; margin-top: 20px; }
+    table {
+      width: 100%; margin-top: 20px;
+      border-collapse: collapse; background: white;
+    }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background: #007bff; color: white; }
+    .row-flex {
+      display: flex;
+      gap: 10px;
+    }
+    .row-flex label {
+      flex: 1;
+    }
+    .main-content {
+    position: flex;
+    margin: 110px;
+    margin-left:165px;
+  justify-content: center;  
+}
+
+    .sidebar { width: 300px; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div id="notice" class="notice"></div>
+    <div id="history" class="history"></div>
+  </div>
+  <div class="main-content">
+    <h1>Seat Allotment System</h1>
+
+    <!-- Initial input for number of departments -->
+    <div id="numDeptsContainer" class="form-container">
+      <label>Number of Departments:</label>
+      <input type="number" id="numDepts" min="1" required>
+      <div class="warning numWarn">Please enter a valid number</div>
+      <div class="btnbar">
+        <button type="button" id="startForms">Start Adding Departments</button>
+      </div>
+    </div>
+
+    <!-- Form container for department forms -->
+    <div id="formsContainer" class="form-container" style="display:none;"></div>
+
+    <div class="btnbar" id="actionBtnBar" style="display:none;">
+      <button type="button" id="actionButton">Add Department</button>
+    </div>
+
+    <table id="resultTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Department</th>
+          <th>Year</th>
+          <th>Room No</th>
+          <th>Allotted Roll Nos</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+  const numDeptsContainer = document.getElementById("numDeptsContainer");
+  const formsContainer = document.getElementById("formsContainer");
+  const actionBtnBar = document.getElementById("actionBtnBar");
+  const actionButton = document.getElementById("actionButton");
+  const historyBox = document.getElementById("history");
+  const notice = document.getElementById("notice");
+  const allEntries = [];
+  let numDepts = 0;
+  let currentDeptIndex = 0;
+
+  function parseRolls(rollsRaw) {
+    const rolls = [];
+    const parts = rollsRaw.split(',').map(part => part.trim());
+    for (const part of parts) {
+      if (part.includes('-')) {
+        let [start, end] = part.split('-').map(num => parseInt(num.trim()));
+        if (isNaN(start) || isNaN(end)) continue;
+        if (start > end) [start, end] = [end, start];
+        for (let i = start; i <= end; i++) rolls.push(i);
+      } else {
+        const num = parseInt(part);
+        if (!isNaN(num)) rolls.push(num);
+      }
+    }
+    return rolls;
+  }
+
+  function compressRolls(rollsArray) {
+    if (rollsArray.length === 0) return '';
+    const sorted = [...new Set(rollsArray)].sort((a, b) => a - b);
+    const result = [];
+    let start = sorted[0];
+    let prev = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] === prev + 1) {
+        prev = sorted[i];
+      } else {
+        result.push(start === prev ? `${start}` : `${start}-${prev}`);
+        start = sorted[i];
+        prev = sorted[i];
+      }
+    }
+    result.push(start === prev ? `${start}` : `${start}-${prev}`);
+    return result.join(',');
+  }
+
+  function normalizeRollsRaw(rollsRaw) {
+    const rolls = parseRolls(rollsRaw);
+    return compressRolls(rolls);
+  }
+
+  function isValidRollInput(rollsRaw) {
+    const parts = rollsRaw.split(',').map(part => part.trim()).filter(p => p !== "");
+    const rollRangeRegex = /^\d+(-\d+)?$/;
+    if (parts.length === 0) return false;
+    for (const part of parts) {
+      if (!rollRangeRegex.test(part)) return false;
+      if (part.includes("-")) {
+        const [start, end] = part.split('-').map(Number);
+        if (isNaN(start) || isNaN(end)) return false;
+      }
+    }
+    return true;
+  }
+
+  function initializeFlatpickr(input, defaultDate = new Date()) {
+    flatpickr(input, {
+      dateFormat: "d-m-Y",
+      allowInput: true,
+      defaultDate: defaultDate,
+      onReady: function (selectedDates, dateStr, instance) {
+        const yearElement = instance.currentYearElement;
+        const parent = yearElement.parentNode;
+        const dropdown = document.createElement("select");
+
+        function fillYears(centerYear) {
+          dropdown.innerHTML = "";
+          for (let y = centerYear; y <= centerYear + 50; y++) {
+            const opt = document.createElement("option");
+            opt.value = y;
+            opt.textContent = y;
+            if (y === instance.currentYear) opt.selected = true;
+            dropdown.appendChild(opt);
+          }
+        }
+
+        fillYears(instance.currentYear);
+        dropdown.addEventListener("change", () => instance.changeYear(parseInt(dropdown.value)));
+        instance.config.onYearChange = (selectedDates, dateStr, inst) => {
+          fillYears(inst.currentYear);
+          dropdown.value = inst.currentYear;
+        };
+
+        parent.replaceChild(dropdown, yearElement);
+        instance.currentYearElement = dropdown;
+      }
+    });
+  }
+
+  function createForm() {
+    formsContainer.innerHTML = `
+      <div style="font-weight:bold; margin-bottom:10px;">Department ${currentDeptIndex + 1} of ${numDepts}</div>
+      <form id="currentForm" class="allotmentForm">
+        <label>Date:</label>
+        <input type="text" class="dateInput" placeholder="dd-mm-yyyy" required>
+        <div class="warning dateWarn">Please enter a date</div>
+
+        <div class="row-flex">
+          <label style="flex:0.5">Year:
+            <select class="year" required>
+              <option disabled selected value="">-- Select Year --</option>
+              <option>UG-I</option><option>UG-II</option><option>UG-III</option>
+              <option>UG-IV</option><option>PG-I</option><option>PG-II</option>
+            </select>
+            <div class="warning yearWarn">Please select a year</div>
+          </label>
+          <label style="flex:1.5">Department:
+            <select class="dept" required>
+              <option disabled selected value="">-- Select Department --</option>
+              ${["PHYS","CS","MTM","CHEM","MCB","INC","ECO","ZOO","BEN","ENG","SANS","HIS","PHIL","POLS"]
+                .map(dep => `<option>${dep}</option>`).join("")}
+            </select>
+            <div class="warning deptWarn">Please select a department</div>
+          </label>
+        </div>
+
+        <label>Roll Numbers (e.g. 101,105-110,115):</label>
+        <input type="text" class="rolls" placeholder="Enter roll numbers or ranges" required>
+        <div class="warning rollsWarn">Please enter roll numbers</div>
+
+        <label>Room:</label>
+        <select class="room" required>
+          <option disabled selected value="">-- Select Room --</option>
+          <option>1</option><option>3A</option><option>13</option>
+          <option>16</option><option>18</option><option>20</option>
+          <option>Tejasananda Hall</option>
+        </select>
+        <div class="warning roomWarn">Please select a room</div>
+      </form>
+    `;
+    initializeFlatpickr(formsContainer.querySelector(".dateInput"));
+  }
+
+  function saveCurrentForm() {
+    const form = document.getElementById("currentForm");
+    if (!form) return false;
+
+    const date = form.querySelector(".dateInput");
+    const year = form.querySelector(".year");
+    const dept = form.querySelector(".dept");
+    const rolls = form.querySelector(".rolls");
+    const room = form.querySelector(".room");
+
+    let valid = true;
+    form.querySelectorAll(".warning").forEach(w => w.style.display = "none");
+    form.querySelectorAll("input, select").forEach(el => el.classList.remove("error"));
+
+    if (!date.value.trim()) { date.classList.add("error"); form.querySelector(".dateWarn").style.display = "block"; valid = false; }
+    if (!year.value.trim()) { year.classList.add("error"); form.querySelector(".yearWarn").style.display = "block"; valid = false; }
+    if (!dept.value.trim()) { dept.classList.add("error"); form.querySelector(".deptWarn").style.display = "block"; valid = false; }
+    if (!rolls.value.trim() || !isValidRollInput(rolls.value.trim())) {
+      rolls.classList.add("error");
+      form.querySelector(".rollsWarn").style.display = "block";
+      valid = false;
+    }
+    if (!room.value.trim()) { room.classList.add("error"); form.querySelector(".roomWarn").style.display = "block"; valid = false; }
+
+    if (!valid) return false;
+
+    const rollsRaw = normalizeRollsRaw(rolls.value.trim());
+    const entry = {
+      date: date.value.trim(),
+      year: year.value,
+      dept: dept.value,
+      room: room.value.trim(),
+      rollsRaw: rollsRaw
+    };
+
+    allEntries.push(entry);
+    addHistoryEntry(entry, allEntries.length - 1);
+    return true;
+  }
+
+  function addHistoryEntry(entry, index) {
+    const container = document.createElement("div");
+    const viewDiv = document.createElement("div");
+    viewDiv.className = "history-entry";
+    const span = document.createElement("span");
+    span.textContent = `${entry.dept} | ${entry.year} | Room: ${entry.room} | Rolls: ${entry.rollsRaw}`;
+       const editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+
+    viewDiv.appendChild(span);
+    viewDiv.appendChild(editBtn);
+
+    const editForm = document.createElement("div");
+    editForm.className = "edit-form";
+    editForm.innerHTML = `
+      <label>Date: <input type="text" class="edit-date" value="${entry.date}"></label>
+      <div class="edit-row">
+        <label style="flex:0.5">Year:
+          <select class="edit-year">
+            ${["UG-I", "UG-II", "UG-III", "UG-IV", "PG-I", "PG-II"]
+              .map(y => `<option${y === entry.year ? " selected" : ""}>${y}</option>`).join("")}
+          </select>
+        </label>
+        <label style="flex:1.5">Department:
+          <select class="edit-dept">
+            ${["PHYS", "CS", "MTM", "CHEM", "MCB", "INC", "ECO", "ZOO", "BEN", "ENG", "SANS", "HIS", "PHIL", "POLS"]
+              .map(d => `<option${d === entry.dept ? " selected" : ""}>${d}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <label>Rolls: <input type="text" class="edit-rolls" value="${entry.rollsRaw}"></label>
+      <label>Room:
+        <select class="edit-room">
+          ${["1", "3A", "13", "16", "18", "20", "Tejasananda Hall"]
+            .map(r => `<option${r === entry.room ? " selected" : ""}>${r}</option>`).join("")}
+        </select>
+      </label>
+      <div class="edit-warning" style="color:#ff4d4f; font-size:12px; margin:5px 0; display:none;"></div>
+      <button class="saveEdit">Save</button>
+      <button class="cancelEdit">Cancel</button>
+    `;
+
+    initializeFlatpickr(editForm.querySelector(".edit-date"), entry.date);
+
+editBtn.onclick = () => {
+  // Store original values in dataset attributes
+  const dateInput = editForm.querySelector(".edit-date");
+  const yearSelect = editForm.querySelector(".edit-year");
+  const deptSelect = editForm.querySelector(".edit-dept");
+  const rollsInput = editForm.querySelector(".edit-rolls");
+  const roomSelect = editForm.querySelector(".edit-room");
+
+  dateInput.dataset.original = dateInput.value;
+  yearSelect.dataset.original = yearSelect.value;
+  deptSelect.dataset.original = deptSelect.value;
+  rollsInput.dataset.original = rollsInput.value;
+  roomSelect.dataset.original = roomSelect.value;
+
+  viewDiv.style.display = "none";
+  editForm.style.display = "block";
+};
+
+editForm.querySelector(".cancelEdit").onclick = () => {
+  // Restore original values
+  const dateInput = editForm.querySelector(".edit-date");
+  const yearSelect = editForm.querySelector(".edit-year");
+  const deptSelect = editForm.querySelector(".edit-dept");
+  const rollsInput = editForm.querySelector(".edit-rolls");
+  const roomSelect = editForm.querySelector(".edit-room");
+
+  dateInput.value = dateInput.dataset.original;
+  yearSelect.value = yearSelect.dataset.original;
+  deptSelect.value = deptSelect.dataset.original;
+  rollsInput.value = rollsInput.dataset.original;
+  roomSelect.value = roomSelect.dataset.original;
+
+  editForm.style.display = "none";
+  viewDiv.style.display = "flex";
+};
+
+    editForm.querySelector(".saveEdit").onclick = () => {
+      let rollsRaw = editForm.querySelector(".edit-rolls").value.trim();
+      const warnBox = editForm.querySelector(".edit-warning");
+      warnBox.style.display = "none";
+
+      if (!isValidRollInput(rollsRaw)) {
+        warnBox.textContent = "Invalid roll format. Use 101,105-110 etc.";
+        warnBox.style.display = "block";
+        return;
+      }
+
+      rollsRaw = normalizeRollsRaw(rollsRaw);
+      const updated = {
+        date: editForm.querySelector(".edit-date").value.trim(),
+        year: editForm.querySelector(".edit-year").value,
+        dept: editForm.querySelector(".edit-dept").value,
+        room: editForm.querySelector(".edit-room").value,
+        rollsRaw
+      };
+
+      allEntries[index] = updated;
+      span.textContent = `${updated.dept} | ${updated.year} | Room: ${updated.room} | Rolls: ${updated.rollsRaw}`;
+      editForm.style.display = "none";
+      viewDiv.style.display = "flex";
+    };
+
+    container.appendChild(viewDiv);
+    container.appendChild(editForm);
+    historyBox.appendChild(container);
+  }
+
+  document.getElementById("startForms").addEventListener("click", () => {
+    const numInput = document.getElementById("numDepts");
+    const warn = numDeptsContainer.querySelector(".numWarn");
+    warn.style.display = "none";
+    numInput.classList.remove("error");
+
+    if (!numInput.value || numInput.value < 1) {
+      numInput.classList.add("error");
+      warn.style.display = "block";
+      return;
+    }
+
+    numDepts = parseInt(numInput.value);
+    numDeptsContainer.style.display = "none";
+    formsContainer.style.display = "block";
+    actionBtnBar.style.display = "block";
+    createForm();
+  });
+
+  actionButton.addEventListener("click", () => {
+    if (actionButton.textContent === "Generate Allotment") {
+      const tbody = document.querySelector("#resultTable tbody");
+      tbody.innerHTML = "";
+      allEntries.forEach(entry => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${entry.date}</td>
+          <td>${entry.dept}</td>
+          <td>${entry.year}</td>
+          <td>${entry.room}</td>
+          <td>${entry.rollsRaw}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      document.getElementById("resultTable").style.display = "table";
+      formsContainer.style.display = "none";
+      actionBtnBar.style.display = "none";
+      return;
+    }
+
+    const saved = saveCurrentForm();
+    if (saved) {
+      currentDeptIndex++;
+      if (currentDeptIndex < numDepts) {
+        createForm();
+      } else {
+        formsContainer.innerHTML = "";
+        actionButton.textContent = "Generate Allotment";
+        actionButton.classList.add("generate-allotment");
+      }
+    }
+  });
+</script>
+
+
+</body>
+</html>
