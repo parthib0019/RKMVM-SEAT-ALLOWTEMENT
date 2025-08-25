@@ -82,15 +82,17 @@ def expand_rolls(roll_text: str):
 
 # ------------------ Allocation ------------------
 def can_place(seat_matrix, c, r, dept):
+    #print(f"Checking placement at ({c}, {r}) for dept {dept}")
     separation = 2
-    for dc in [-1*separation, 0, separation]:
-        for dr in [-1*separation, 0, separation]:
+    for dc in range(-1*separation, separation):
+        for dr in range(-1*separation, separation):
             if dc == 0 and dr == 0:
                 continue
             cc = c + dc
             rr = r + dr
             if 0 <= cc < len(seat_matrix) and 0 <= rr < len(seat_matrix[cc]):
                 neighbor = seat_matrix[cc][rr]
+                #print(f"Neighbor at ({cc}, {rr}): {neighbor}")
                 if neighbor != "e" and neighbor[1] == dept:
                     return False    
     return True
@@ -106,12 +108,14 @@ def allocate_seats(seat_matrix, rolls, dept, year):
     for c in range(len(seat_matrix)):          # loop over columns
         for r in range(len(seat_matrix[c])):   # loop benches in column
             if not rolls:                      # stop if no rolls left
-                for i in seat_matrix:print(i)
+                seat_matrix.reverse()
                 return seat_matrix
 
             if seat_matrix[c][r] == "e" and can_place(seat_matrix, c, r, dept):
+                print(can_place(seat_matrix, c, r, dept))
                 roll = rolls.pop(0)            # assign one roll only
                 seat_matrix[c][r] = (roll, dept, year)
+            for i in seat_matrix:print(i)
 
 
 
@@ -129,41 +133,45 @@ def export_pdf(filename, seat_matrix, subject, year, date, room):
     elements = []
     styles = getSampleStyleSheet()
 
-    # Header
     elements.append(Paragraph(f"<b>Room {room} | {date} | {subject} {year}</b>", styles["Heading2"]))
     elements.append(Spacer(1, 12))
 
-    # Rotate seat_matrix for PDF printing
-    pdf_matrix = rotate_for_pdf(seat_matrix)
+    # find max column height
+    max_rows = max(len(col) for col in seat_matrix)
 
-    # Convert seat_matrix into table data
+    # transpose into rows
     data = []
-    for row in pdf_matrix:
+    for r in range(max_rows):
         row_data = []
-        for seat in row:
-            if seat == "e":
-                row_data.append("")   # empty cell
-            elif isinstance(seat, tuple):
-                if len(seat) == 3:
+        for c in range(len(seat_matrix)):
+            if r < len(seat_matrix[c]):
+                seat = seat_matrix[c][r]
+                if seat != "e":
                     roll, dept, yr = seat
-                elif len(seat) == 2:
-                    roll, dept = seat
-                    yr = ""
+                    row_data.append(f"{roll}\n{dept}-{yr}")
                 else:
-                    roll, dept, yr = "", "", ""
-                row_data.append(f"{roll}\n{dept}-{yr}")
+                    row_data.append("")  # empty seat
             else:
-                row_data.append("")   # fallback
+                row_data.append(None)  # no seat (don’t show border)
         data.append(row_data)
 
-    # Create table
-    table = Table(data, repeatRows=1)
-    table.setStyle(TableStyle([
-        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
-        ("ALIGN", (0,0), (-1,-1), "CENTER"),
-        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-        ("FONTSIZE", (0,0), (-1,-1), 8),
-    ]))
+    # build table with conditional border styling
+    table = Table(data)
+
+    # style: no border for None, grid otherwise
+    style_commands = []
+    for r, row in enumerate(data):
+        for c, cell in enumerate(row):
+            if cell is None:
+                style_commands.append(("LINEBELOW", (c, r), (c, r), 0, colors.white))
+                style_commands.append(("LINEABOVE", (c, r), (c, r), 0, colors.white))
+                style_commands.append(("LINEBEFORE", (c, r), (c, r), 0, colors.white))
+                style_commands.append(("LINEAFTER", (c, r), (c, r), 0, colors.white))
+            else:
+                style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
+
+    style_commands.append(("ALIGN", (0, 0), (-1, -1), "CENTER"))
+    table.setStyle(TableStyle(style_commands))
 
     elements.append(table)
     doc.build(elements)
