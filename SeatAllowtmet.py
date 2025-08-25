@@ -182,6 +182,7 @@ def export_pdf(filename, seat_matrix, subject, year, date, room):
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
+        totalRooms = {}                      # {room_id: (seat_matrix, date, subject-year list)}
         file = request.files.get("file")
         if not file:
             flash("No file uploaded")
@@ -200,14 +201,18 @@ def index():
                 continue
             subject, year, roll_range, date, room = parse_line(line)
             rolls = expand_rolls(roll_range)
-            seat_matrix = get_room_info(room)
-            if not seat_matrix:
-                print(f"⚠️ No room info found for Room {room}")
-                continue
-            seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
-
-
-            pdf_name = f"{subject}_{year}_{room}.pdf".replace(" ", "_")
+            if room not in totalRooms:
+                seat_matrix = get_room_info(room)
+                if not seat_matrix:
+                    print(f"⚠️ No room info found for Room {room}")
+                    continue
+                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
+                totalRooms[room] = (seat_matrix, date)
+            else:
+                seat_matrix = totalRooms[room][0]
+                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
+        for room, (seat_matrix, date) in totalRooms.items():
+            pdf_name = f"RoomNumber:{room}.pdf".replace(" ", "_")
             pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], pdf_name)
             export_pdf(pdf_path, seat_matrix, subject, year, date, room)
             pdf_files.append(pdf_name)
