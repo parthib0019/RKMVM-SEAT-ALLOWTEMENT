@@ -1,57 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Seating Arrangement - {{ hall }}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-        h1, h2 { text-align: center; }
-        table { border-collapse: collapse; margin: 20px auto; }
-        td { width: 60px; height: 40px; text-align: center; vertical-align: middle;
-             border: 1px solid #555; padding: 5px; }
-        .dept-PHYS { background: #f4cccc; }
-        .dept-CHEM { background: #d9ead3; }
-        .dept-MATH { background: #cfe2f3; }
-        .dept-MCBA { background: #fff2cc; }
-        .dept-COMS { background: #ead1dc; }
-        .dept-INCH { background: #d0e0e3; }
-        .dept-ECON { background: #fce5cd; }
-        .dept-ZOOL { background: #c9daf8; }
-        .dept-BENG { background: #d9d2e9; }
-        .dept-ENG  { background: #f6b26b; }
-        .dept-SANS { background: #76a5af; color: white; }
-        .dept-HIS  { background: #6aa84f; color: white; }
-        .dept-PHIL { background: #e06666; color: white; }
-        .dept-POLS { background: #674ea7; color: white; }
-        .legend { margin: 20px auto; max-width: 600px; }
-        .legend span { display: inline-block; padding: 4px 8px; margin: 3px;
-                       border-radius: 4px; font-size: 14px; }
-    </style>
+  <title>Results</title>
 </head>
 <body>
-    <h1>Seating Arrangement for {{ hall }}</h1>
-    <h2>{{ exam_date }} @ {{ exam_time }}</h2>
-    <h3>Department: {{ dept }} | Year: {{ year }}</h3>
-
-    <table>
-        {% for row in seat_matrix %}
-        <tr>
-            {% for seat in row %}
-            {% if seat %}
-            <td class="dept-{{ seat.dept }}">{{ seat.roll }}<br>({{ seat.dept }})</td>
-            {% else %}
-            <td></td>
-            {% endif %}
-            {% endfor %}
-        </tr>
-        {% endfor %}
-    </table>
-
-    <div class="legend">
-        <h3>Legend</h3>
-        {% for d in chosen %}
-            <span class="dept-{{ d }}">{{ d }}</span>
-        {% endfor %}
-    </div>
+  <h1>Generated PDFs</h1>
+  <ul>
+    {% for f in pdf_files %}
+      <li><a href="{{ url_for('download_file', filename=f) }}">{{ f }}</a></li>
+    {% endfor %}
+  </ul>
 </body>
 </html>
