@@ -198,6 +198,7 @@ def index():
         with open(filepath, "r") as f:
             lines = f.read().splitlines()
 
+        rnd.shuffle(lines)
         pdf_files = []
         for line in lines:
             if not line.strip():
