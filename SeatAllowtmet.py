@@ -8,6 +8,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4
 import numpy as np
 from itertools import zip_longest
+import random as rnd
 
 # ------------------ Flask Config ------------------
 app = Flask(__name__)
@@ -103,19 +104,20 @@ def allocate_seats(seat_matrix, rolls, dept, year):
     if not seat_matrix:
         return seat_matrix
 
-    rolls = list(rolls)  # make mutable copy
+    #rolls = list(rolls)  # make mutable copy
 
     for c in range(len(seat_matrix)):          # loop over columns
         for r in range(len(seat_matrix[c])):   # loop benches in column
             if not rolls:                      # stop if no rolls left
+                for i in seat_matrix:print(i)
                 seat_matrix.reverse()
                 return seat_matrix
 
             if seat_matrix[c][r] == "e" and can_place(seat_matrix, c, r, dept):
-                print(can_place(seat_matrix, c, r, dept))
                 roll = rolls.pop(0)            # assign one roll only
                 seat_matrix[c][r] = (roll, dept, year)
-            for i in seat_matrix:print(i)
+    return seat_matrix
+
 
 
 
@@ -179,6 +181,7 @@ def export_pdf(filename, seat_matrix, subject, year, date, room):
 
 
 # ------------------ Routes ------------------
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -203,14 +206,20 @@ def index():
             rolls = expand_rolls(roll_range)
             if room not in totalRooms:
                 seat_matrix = get_room_info(room)
+                print(room)
+                print(seat_matrix, rolls, subject, year)
                 if not seat_matrix:
                     print(f"⚠️ No room info found for Room {room}")
                     continue
                 seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
+                
+                for i in seat_matrix:print(i)
                 totalRooms[room] = (seat_matrix, date)
             else:
                 seat_matrix = totalRooms[room][0]
                 seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
+
+        print(totalRooms)
         for room, (seat_matrix, date) in totalRooms.items():
             pdf_name = f"RoomNumber:{room}.pdf".replace(" ", "_")
             pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], pdf_name)
