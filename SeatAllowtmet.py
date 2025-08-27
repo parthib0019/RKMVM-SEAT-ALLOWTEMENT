@@ -109,7 +109,6 @@ def allocate_seats(seat_matrix, rolls, dept, year):
     for c in range(len(seat_matrix)):          # loop over columns
         for r in range(len(seat_matrix[c])):   # loop benches in column
             if not rolls:                      # stop if no rolls left
-                for i in seat_matrix:print(i)
                 seat_matrix.reverse()
                 return seat_matrix
 
@@ -203,22 +202,22 @@ def index():
         for line in lines:
             if not line.strip():
                 continue
+            print(f"Processing line: {line}")
             subject, year, roll_range, date, room = parse_line(line)
             rolls = expand_rolls(roll_range)
-            if room not in totalRooms:
+            if room in totalRooms and totalRooms[room][1] == date:
+                seat_matrix = totalRooms[room][0]
+                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
+                room = room+date.replace("/", "-")  # avoid overwriting if same room different date
+                totalRooms[room] = (seat_matrix, date)
+            else:
                 seat_matrix = get_room_info(room)
-                print(room)
-                print(seat_matrix, rolls, subject, year)
                 if not seat_matrix:
                     print(f"⚠️ No room info found for Room {room}")
                     continue
                 seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
-                
-                for i in seat_matrix:print(i)
+                room = room+date.replace("/", "-") 
                 totalRooms[room] = (seat_matrix, date)
-            else:
-                seat_matrix = totalRooms[room][0]
-                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
 
         print(totalRooms)
         for room, (seat_matrix, date) in totalRooms.items():
