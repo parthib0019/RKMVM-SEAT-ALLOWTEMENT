@@ -174,18 +174,28 @@ def export_pdf(filename, totalRooms):
         table = Table(data)
 
         style_commands = [
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),  # full grid for all cells
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),  # full grid for all seats
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ]
 
-        # Now remove borders for None cells only (meaning no bench at all)
+        # Handle spacer columns → merge them vertically into one wide blank column
+        for c in range(len(data[0])):  # iterate over columns
+            # detect spacer columns (all cells = "")
+            if all(row[c] == "" for row in data):
+                style_commands.append(("SPAN", (c, 0), (c, len(data)-1)))   # merge vertically
+                style_commands.append(("LINEBEFORE", (c, 0), (c, len(data)-1), 0, colors.white))
+                style_commands.append(("LINEAFTER", (c, 0), (c, len(data)-1), 0, colors.white))
+                style_commands.append(("BACKGROUND", (c, 0), (c, len(data)-1), colors.white))
+
+        # Handle None cells → remove borders
         for r, row in enumerate(data):
             for c, cell in enumerate(row):
-                if cell is None:  # truly no seat
+                if cell is None:
                     style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
 
         table.setStyle(TableStyle(style_commands))
+
 
 
         elements.append(table)
