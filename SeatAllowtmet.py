@@ -1,6 +1,7 @@
 import os
 import pymysql
 from flask import Flask, request, render_template, send_from_directory, redirect, url_for, flash
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from werkzeug.utils import secure_filename
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
@@ -129,52 +130,67 @@ def rotate_for_pdf(seat_matrix):
     rotated = list(zip_longest(*seat_matrix, fillvalue="e"))
     return [list(row) for row in rotated]
 
-def export_pdf(filename, seat_matrix, subject, year, date, room):
+def export_pdf(filename, totalRooms):
+    """
+    Export all rooms and dates into a single multi-page PDF
+    totalRooms = { "room_date": (seat_matrix, date, subject, year) }
+    """
     doc = SimpleDocTemplate(filename, pagesize=A4)
     elements = []
     styles = getSampleStyleSheet()
 
-    elements.append(Paragraph(f"<b>Room {room} | {date} | {subject} {year}</b>", styles["Heading2"]))
-    elements.append(Spacer(1, 12))
+    for room_key, (seat_matrix, date) in totalRooms.items():
+        # --- Header ---
+        elements.append(Paragraph("<b>RAMAKRISHNA MISSION VIDYAMANDIRA</b>", styles["Title"]))
+        elements.append(Paragraph("Howrah, Belur: 711202", styles["Heading3"]))
+        elements.append(Spacer(1, 12))
+        elements.append(Paragraph(f"<b>Date:</b> {date} &nbsp;&nbsp;&nbsp; <b>Room:</b> {room_key.split('_')[0]}", styles["Heading4"]))
+        elements.append(Spacer(1, 12))
 
-    # find max column height
-    max_rows = max(len(col) for col in seat_matrix)
+        # --- Build seat table ---
+        max_rows = max(len(col) for col in seat_matrix)
 
-    # transpose into rows
-    data = []
-    for r in range(max_rows):
-        row_data = []
-        for c in range(len(seat_matrix)):
-            if r < len(seat_matrix[c]):
-                seat = seat_matrix[c][r]
-                if seat != "e":
-                    roll, dept, yr = seat
-                    row_data.append(f"{roll}\n{dept}-{yr}")
+        data = []
+        for r in range(max_rows):
+            row_data = []
+            for c in range(len(seat_matrix)):
+                if r < len(seat_matrix[c]):
+                    seat = seat_matrix[c][r]
+                    if seat != "e":
+                        roll, dept, yr = seat
+                        row_data.append(f"{roll}\n{dept}-{yr}")
+                    else:
+                        row_data.append("")
                 else:
-                    row_data.append("")  # empty seat
-            else:
-                row_data.append(None)  # no seat (don’t show border)
-        data.append(row_data)
+                    row_data.append(None)
 
-    # build table with conditional border styling
-    table = Table(data)
+                # Add a blank spacer column after every 2 bench-columns
+                if (c + 1) % 2 == 0 and c != len(seat_matrix) - 1:
+                    row_data.append("")  # spacer column
 
-    # style: no border for None, grid otherwise
-    style_commands = []
-    for r, row in enumerate(data):
-        for c, cell in enumerate(row):
-            if cell is None:
-                style_commands.append(("LINEBELOW", (c, r), (c, r), 0, colors.white))
-                style_commands.append(("LINEABOVE", (c, r), (c, r), 0, colors.white))
-                style_commands.append(("LINEBEFORE", (c, r), (c, r), 0, colors.white))
-                style_commands.append(("LINEAFTER", (c, r), (c, r), 0, colors.white))
-            else:
-                style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
+            data.append(row_data)
 
-    style_commands.append(("ALIGN", (0, 0), (-1, -1), "CENTER"))
-    table.setStyle(TableStyle(style_commands))
+        # --- Table formatting ---
+        table = Table(data)
 
-    elements.append(table)
+        style_commands = [
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),  # full grid for all cells
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ]
+
+        # Now remove borders for None cells only (meaning no bench at all)
+        for r, row in enumerate(data):
+            for c, cell in enumerate(row):
+                if cell is None:  # truly no seat
+                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
+
+        table.setStyle(TableStyle(style_commands))
+
+
+        elements.append(table)
+        elements.append(PageBreak())  # new page per room/date
+
     doc.build(elements)
 
 
@@ -205,26 +221,30 @@ def index():
             print(f"Processing line: {line}")
             subject, year, roll_range, date, room = parse_line(line)
             rolls = expand_rolls(roll_range)
-            if room in totalRooms and totalRooms[room][1] == date:
-                seat_matrix = totalRooms[room][0]
+            room_key = f"{room}_{date.replace('/', '-')}"   # unique key per room per date
+
+            if room_key in totalRooms:
+                # Same room on same date → fetch old matrix and update
+                seat_matrix = totalRooms[room_key][0]
                 seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
-                room = room+date.replace("/", "-")  # avoid overwriting if same room different date
-                totalRooms[room] = (seat_matrix, date)
+                totalRooms[room_key] = (seat_matrix, date)
+
             else:
+                # Either new room OR same room but different date → fresh start
                 seat_matrix = get_room_info(room)
                 if not seat_matrix:
                     print(f"⚠️ No room info found for Room {room}")
                     continue
                 seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
-                room = room+date.replace("/", "-") 
-                totalRooms[room] = (seat_matrix, date)
+                totalRooms[room_key] = (seat_matrix, date)
+
 
         print(totalRooms)
-        for room, (seat_matrix, date) in totalRooms.items():
-            pdf_name = f"RoomNumber:{room}.pdf".replace(" ", "_")
-            pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], pdf_name)
-            export_pdf(pdf_path, seat_matrix, subject, year, date, room)
-            pdf_files.append(pdf_name)
+        # After filling totalRooms
+        pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], "All_Seating_Allotments.pdf")
+        export_pdf(pdf_path, totalRooms)
+        pdf_files = ["All_Seating_Allotments.pdf"]
+
 
         return render_template("seating.html", pdf_files=pdf_files)
 
