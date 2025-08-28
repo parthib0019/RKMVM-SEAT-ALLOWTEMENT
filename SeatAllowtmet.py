@@ -85,7 +85,7 @@ def expand_rolls(roll_text: str):
 # ------------------ Allocation ------------------
 def can_place(seat_matrix, c, r, dept):
     #print(f"Checking placement at ({c}, {r}) for dept {dept}")
-    separation = 2
+    separation = 1
     for dc in range(-1*separation, separation):
         for dr in range(-1*separation, separation):
             if dc == 0 and dr == 0:
@@ -130,78 +130,86 @@ def rotate_for_pdf(seat_matrix):
     rotated = list(zip_longest(*seat_matrix, fillvalue="e"))
     return [list(row) for row in rotated]
 
-def export_pdf(filename, totalRooms):
+def export_pdf(pdf_path, totalRooms):
     """
-    Export all rooms and dates into a single multi-page PDF
-    totalRooms = { "room_date": (seat_matrix, date, subject, year) }
+    totalRooms = {
+        "Room15-2025-08-25": (seat_matrix, date, subject, year),
+        "Room20-2025-08-25": (seat_matrix, date, subject, year),
+        ...
+    }
     """
-    doc = SimpleDocTemplate(filename, pagesize=A4)
+    doc = SimpleDocTemplate(pdf_path, pagesize=A4)
     elements = []
     styles = getSampleStyleSheet()
 
-    for room_key, (seat_matrix, date) in totalRooms.items():
+    for room, (seat_matrix, date) in totalRooms.items():
         # --- Header ---
-        elements.append(Paragraph("<b>RAMAKRISHNA MISSION VIDYAMANDIRA</b>", styles["Title"]))
-        elements.append(Paragraph("Howrah, Belur: 711202", styles["Heading3"]))
-        elements.append(Spacer(1, 12))
-        elements.append(Paragraph(f"<b>Date:</b> {date} &nbsp;&nbsp;&nbsp; <b>Room:</b> {room_key.split('_')[0]}", styles["Heading4"]))
+        room = room.replace("-", "/")  # for better display
+        room = room.replace(date, " ")  # revert date part
+        room = room.replace("_", " ")
+        header_text = (
+            "<b>RAMAKRISHNA MISSION VIDYAMANDIRA</b><br/>"
+            "Howrah, Belur: 711202<br/><br/>"
+            f"<b>Date:</b> {date} &nbsp;&nbsp;&nbsp; <b>Room:</b> {room.replace(date, '')}<br/>"
+        )
+        elements.append(Paragraph(header_text, styles["Title"]))
         elements.append(Spacer(1, 12))
 
-        # --- Build seat table ---
+        # --- Build seat grid ---
         max_rows = max(len(col) for col in seat_matrix)
-
         data = []
+
         for r in range(max_rows):
             row_data = []
             for c in range(len(seat_matrix)):
+                # Insert gutter after every 2 seat-columns
+                if c > 0 and c % 2 == 0:
+                    row_data.append("   ")
+
                 if r < len(seat_matrix[c]):
                     seat = seat_matrix[c][r]
-                    if seat != "e":
+                    if seat == "e":
+                        row_data.append(" ")  # empty seat with border
+                    elif seat is None:
+                        row_data.append(None)  # no seat (no border)
+                    else:
                         roll, dept, yr = seat
                         row_data.append(f"{roll}\n{dept}-{yr}")
-                    else:
-                        row_data.append("")
                 else:
                     row_data.append(None)
-
-                # Add a blank spacer column after every 2 bench-columns
-                if (c + 1) % 2 == 0 and c != len(seat_matrix) - 1:
-                    row_data.append("")  # spacer column
-
             data.append(row_data)
 
-        # --- Table formatting ---
+        # --- Create Table ---
         table = Table(data)
+        style_commands = []
 
-        style_commands = [
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),  # full grid for all seats
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ]
-
-        # Handle spacer columns → merge them vertically into one wide blank column
-        for c in range(len(data[0])):  # iterate over columns
-            # detect spacer columns (all cells = "")
-            if all(row[c] == "" for row in data):
-                style_commands.append(("SPAN", (c, 0), (c, len(data)-1)))   # merge vertically
-                style_commands.append(("LINEBEFORE", (c, 0), (c, len(data)-1), 0, colors.white))
-                style_commands.append(("LINEAFTER", (c, 0), (c, len(data)-1), 0, colors.white))
-                style_commands.append(("BACKGROUND", (c, 0), (c, len(data)-1), colors.white))
-
-        # Handle None cells → remove borders
         for r, row in enumerate(data):
             for c, cell in enumerate(row):
                 if cell is None:
                     style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
+                elif cell == "   ":
+                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
+                else:
+                    style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
 
+        # Merge gutter columns
+        num_cols = len(data[0])
+        for c in range(num_cols):
+            if all(row[c] == "GUTTER" for row in data):
+                style_commands.append(("SPAN", (c, 0), (c, len(data)-1)))
+                style_commands.append(("BOX", (c, 0), (c, len(data)-1), 0, colors.white))
+                style_commands.append(("BACKGROUND", (c, 0), (c, len(data)-1), colors.white))
+                style_commands.append(("ALIGN", (c, 0), (c, len(data)-1), "CENTER"))
+                style_commands.append(("VALIGN", (c, 0), (c, len(data)-1), "MIDDLE"))
+
+        style_commands.append(("ALIGN", (0, 0), (-1, -1), "CENTER"))
         table.setStyle(TableStyle(style_commands))
 
-
-
         elements.append(table)
-        elements.append(PageBreak())  # new page per room/date
+        elements.append(PageBreak())
 
     doc.build(elements)
+
 
 
 
