@@ -1,728 +1,160 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seat Allotment System</title>
-  <link rel="stylesheet" href="flatpickr.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+  <title>Seat Allocation Input</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f6f9; }
-    h1 { text-align: center; color: #333; }
-    .form-container {
-      background: white; padding: 20px; margin-bottom: 20px;
-      border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      max-width: 700px; margin-left: auto; margin-right: auto;
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
     }
-    label { font-weight: bold; margin-top: 10px; display: block; }
+    h2 {
+      text-align: center;
+    }
+    .form-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
     input, select {
-      width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 5px;
-      border: 1px solid #ccc; border-radius: 5px;
+      padding: 8px;
+      width: 220px;
+      margin-top: 5px;
     }
-    .error { border-color: #ff4d4f !important; }
-    .warning { color: #ff4d4f; font-size: 12px; display: none; }
     button {
-      background: #007bff; color: white; border: none;
-      padding: 6px 12px; border-radius: 5px; cursor: pointer; margin: 3px;
-    }
-    button:hover { background: #0056b3; }
-    .btnbar { text-align: center; margin-top: 20px; }
-    table {
-      width: 100%; margin-top: 20px; border-collapse: collapse; background: white;
-    }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-    th { background: #007bff; color: white; }
-    .item-list { margin-top: 15px; }
-    .item {
-      display: flex; justify-content: space-between; align-items: center;
-      background: #f9f9f9; padding: 8px; border-radius: 5px; margin-bottom: 5px;
-    }
-    .actions button { background: #28a745; }
-    .actions button.remove { background: #dc3545; }
-    .actions button:hover { opacity: 0.8; }
-    /* Custom dropdown arrow for year selector */
-    #commonYear {
-      background: url('data:image/svg+xml;utf8,<svg fill="%23333" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 8.293a1 1 0 011.414 0L10 9.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>') no-repeat right 0.75em center/1em 1em;
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      padding-right: 2.5em;
+      margin-top: 15px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      background: #007BFF;
+      color: #fff;
+      font-size: 16px;
       cursor: pointer;
     }
-/*#generateBtn {
-  padding: 10px 24px;
-  font-size: 12px;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #ffffff;
-  background: linear-gradient( #ff4d4d, blue, orange);
-  background-size: 400% 400%;
-  border: 3px solid #ffffffaa;
-  border-radius: 12px;
-  cursor: pointer;
-  box-shadow:
-    0 0 10px orangered,
-    0 0 20px blue,
-    0 0 30px orange;
-
-  animation:
-    vividGradient 4s ease infinite,
-    glowFlicker 2.5s ease-in-out infinite,
-    borderShift 1s linear infinite;
-    
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-#generateBtn:hover {
-  transform: scale(1.08) rotate(1deg);
-  box-shadow:
-    0 0 15px orangered,
-    0 0 25px blue,
-    0 0 40px orangered;
-}
-
-
-@keyframes vividGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-
-@keyframes glowFlicker {
-  0%, 100% {
-    text-shadow: 0 0 8px #ffffffcc;
-  }
-  50% {
-    text-shadow: 0 0 16px #ffffffee, 0 0 32px #ff00ffbb;
-  }
-}
-
- Border color cycling 
-@keyframes borderShift {
-  0%   { border-color: orange; }
-  25%  { border-color: blue; }
-  50%  { border-color: orange; }
-  75%  { border-color: blue; }
-  100% { border-color: orange; }
-}*/
-
-
-
-        #generateBtn {
-            padding: 10px 24px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #ffffff;
-            background: linear-gradient( to right, #ff4d4d, blue, orange);
-            background-size: 400% 400%;
-            border: 3px solid #ffffffaa;
-            border-radius: 12px;
-            cursor: pointer;
-            animation: vividGradient 4s ease infinite, borderShift 1s linear infinite;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        @keyframes vividGradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        @keyframes borderShift {
-            0% { border-color: orange; }
-            25% { border-color: blue; }
-            50% { border-color: orange; }
-            75% { border-color: blue; }
-            100% { border-color: orange; }
-        }
-
-
-
-    /* Remove up/down arrows from year selector and add spacing */
-    .flatpickr-calendar .flatpickr-month {
-      margin-bottom: 15px;
-    }
-    
-    .flatpickr-calendar .numInputWrapper {
-      position: relative;
-    }
-    
-    .flatpickr-calendar .numInputWrapper .arrowUp,
-    .flatpickr-calendar .numInputWrapper .arrowDown {
-      display: none !important;
-    }
-    
-    .flatpickr-calendar .flatpickr-current-month select {
-      appearance: menulist;
-      -webkit-appearance: menulist;
-      -moz-appearance: menulist;
-    }
-    
-    .flatpickr-calendar .dayContainer {
-      margin-top: 10px;
+    button:hover {
+      background: #0056b3;
     }
   </style>
 </head>
 <body>
+  <h2>Seat Allocation Input</h2>
 
-<h1>Seat Allotment System</h1>
-
-<!-- STEP 1: Number of Departments -->
-<div id="numDeptsContainer" class="form-container">
-  <label>Number of Departments:</label>
-  <input type="number" id="numDepts" min="1" required>
-  <div class="warning numWarn">Please enter a valid number</div>
-  <div class="btnbar">
-    <button type="button" id="startCommon">Start Inputing Datas</button>
+  <!-- Number of Inputs -->
+  <div class="form-section">
+    <label for="numInputs">How many inputs?</label>
+    <input type="number" id="numInputs" min="1" value="1">
+    <button onclick="generateForms()">Generate</button>
   </div>
-</div>
 
-<!-- STEP 2: Common Inputs (Date, Year, Room) -->
-<div id="commonContainer" class="form-container" style="display:none;">
-  <form id="commonForm">
-    <label>Date:</label>
-    <input type="text" id="commonDate" placeholder="dd-mm-yyyy" required>
-    <div class="warning dateWarn">Please enter a date</div>
-
-    <label>Year:</label>
-    <select id="commonYear" required>
-      <option disabled selected value="">-- Select Year --</option>
-      <option>UG-I</option><option>UG-II</option><option>UG-III</option>
-      <option>UG-IV</option><option>PG-I</option><option>PG-II</option>
-    </select>
-    <div class="warning yearWarn">Please select a year</div>
-
-    <label>Room:</label>
-    <select id="commonRoom" required>
-      <option disabled selected value="">-- Select Room --</option>
-      <option>1</option><option>3A</option><option>13</option>
-      <option>16</option><option>18</option><option>20</option>
-      <option>Tejasananda Hall</option>
-    </select>
-    <div class="warning roomWarn">Please select a room</div>
-
-    <div class="btnbar">
-      <button type="button" id="saveCommon">Save Common Data</button>
-    </div>
+  <!-- Form Container -->
+  <form id="mainForm" method="POST" enctype="multipart/form-data" action="/">
+    <div id="inputsContainer"></div>
+    <button type="button" onclick="submitData()">Submit</button>
   </form>
 
-  <!-- Saved Common Info -->
-  <div class="item-list" id="commonList" style="display:none;"></div>
-</div>
+  <script>
+    const inputsContainer = document.getElementById("inputsContainer");
 
-<!-- STEP 3: Department-specific forms -->
-<div id="formsContainer" class="form-container" style="display:none;">
-  <div id="deptFormArea"></div>
-  <div class="item-list" id="deptList"></div>
-</div>
+    // Generate form blocks dynamically
+    function generateForms() {
+      inputsContainer.innerHTML = "";
+      const n = document.getElementById("numInputs").value;
 
-<!-- RESULT TABLE -->
-<div class="form-container">
-  <div id="actionButtons" class="btnbar" style="margin-bottom: 20px; display: none;">
-    <button type="button" id="generateBtn" onclick="generateAllotment()" >Generate Allotment</button>
-    <!--<button type="button" id="exportBtn" onclick="exportData()" style="background: #17a2b8; font-size: 16px; padding: 10px 20px;">Export Data</button>-->
-  </div>
-  
-  <table id="resultTable" style="display:none;">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Department No</th>
-        <th>Department</th>
-        <th>Year</th>
-        <th>Room No</th>
-        <th>Allotted Roll Nos</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+      for (let i=0; i<n; i++) {
+        const div = document.createElement("div");
+        div.classList.add("form-section");
+        div.innerHTML = `
+          <h3>Input ${i+1}</h3>
+          <label>Department:</label>
+          <select class="dept${i}">
+            <option value="ENGA">ENGA</option>
+            <option value="PHIL">PHIL</option>
+            <option value="MATH">MATH</option>
+            <option value="COMS">COMS</option>
+          </select>
 
+          <label>Year:</label>
+          <select class="year${i}">
+            <option value="UG-1">UG-1</option>
+            <option value="UG-2">UG-2</option>
+            <option value="UG-3">UG-3</option>
+          </select>
 
+          <label>Roll Range:</label>
+          <input type="text" class="rolls${i}" placeholder="e.g. 1-50,55,60-70">
 
-<script>
-// Allow Enter key to trigger Save for common data and department forms
-document.addEventListener("DOMContentLoaded", function() {
-  // Number of Departments input: Enter triggers Next
-  var numDeptsInput = document.getElementById("numDepts");
-  if (numDeptsInput) {
-    numDeptsInput.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        document.getElementById("startCommon").click();
+          <label>Date:</label>
+          <input type="text" class="date${i}" placeholder="dd/mm/yyyy">
+
+          <label>Room No:</label>
+          <select class="room${i}">
+            <option value="1">1</option>
+            <option value="5">5</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+          </select>
+
+          <label>Separation:</label>
+          <select class="sep${i}">
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        `;
+        inputsContainer.appendChild(div);
       }
-    });
-  }
-  // Common Data Form
-  var commonForm = document.getElementById("commonForm");
-  if (commonForm) {
-    commonForm.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        document.getElementById("saveCommon").click();
-      }
-    });
-  }
-  // Department Form (dynamic)
-  document.body.addEventListener("keydown", function(e) {
-    var deptForm = document.getElementById("currentForm");
-    if (deptForm && e.target && deptForm.contains(e.target) && e.key === "Enter") {
-      e.preventDefault();
-      var saveBtn = document.getElementById("saveDept");
-      if (saveBtn) saveBtn.click();
     }
-  });
-});
 
-const allEntries = [];
-let numDepts = 0;
-let currentDeptIndex = 0;
-let commonData = null;
-let editMode = null;
+    // Collect data and send to Flask
+    function submitData() {
+      const n = document.getElementById("numInputs").value;
+      let lines = [];
 
-function parseRolls(rollsRaw) {
-  const rolls = [];
-  const parts = rollsRaw.split(',').map(p => p.trim());
-  for (const part of parts) {
-    if (part.includes('-')) {
-      let [start, end] = part.split('-').map(Number);
-      if (isNaN(start) || isNaN(end)) continue;
-      if (start > end) [start, end] = [end, start];
-      for (let i = start; i <= end; i++) rolls.push(i);
-    } else {
-      const num = parseInt(part);
-      if (!isNaN(num)) rolls.push(num);
-    }
-  }
-  return rolls;
-}
+      for (let i=0; i<n; i++) {
+        const dept = document.querySelector(`.dept${i}`).value.trim();
+        const year = document.querySelector(`.year${i}`).value.trim();
+        const rolls = document.querySelector(`.rolls${i}`).value.trim();
+        const date = document.querySelector(`.date${i}`).value.trim();
+        const room = document.querySelector(`.room${i}`).value.trim();
+        const sep = document.querySelector(`.sep${i}`).value.trim();
 
-function compressRolls(rolls) {
-  if (!rolls.length) return '';
-  const sorted = [...new Set(rolls)].sort((a, b) => a - b);
-  const result = [];
-  let start = sorted[0], prev = sorted[0];
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i] === prev + 1) prev = sorted[i];
-    else {
-      result.push(start === prev ? `${start}` : `${start}-${prev}`);
-      start = prev = sorted[i];
-    }
-  }
-  result.push(start === prev ? `${start}` : `${start}-${prev}`);
-  return result.join(',');
-}
-
-function normalizeRollsRaw(rollsRaw) { return compressRolls(parseRolls(rollsRaw)); }
-
-function isValidRollInput(rollsRaw) {
-  const parts = rollsRaw.split(',').map(p => p.trim()).filter(Boolean);
-  const regex = /^\d+(-\d+)?$/;
-  return parts.length > 0 && parts.every(p => regex.test(p));
-}
-
-function initializeFlatpickr(input, defaultDate = new Date()) {
-  // Generate year range (10 years back to 10 years forward from current year)
-  const currentYear = new Date().getFullYear();
-  const minYear = currentYear;
-  const maxYear = currentYear + 20;
-  
-  flatpickr(input, {
-    dateFormat: "d-m-Y",
-    allowInput: true,
-    defaultDate: defaultDate,
-    monthSelectorType: 'dropdown',
-    yearSelectorType: 'dropdown',
-    minDate: `01-01-${minYear}`,
-    maxDate: `31-12-${maxYear}`,
-    // Custom year range for the dropdown
-    onReady: function(selectedDates, dateStr, instance) {
-      // Replace the year input with a proper dropdown select
-      const yearInput = instance.yearElements[0];
-      if (yearInput && yearInput.parentNode) {
-        // Create a select element
-        const yearSelect = document.createElement('select');
-        yearSelect.className = yearInput.className;
-        yearSelect.style.cssText = yearInput.style.cssText;
-        
-        // Add options for each year
-        for (let year = minYear; year <= maxYear; year++) {
-          const option = document.createElement('option');
-          option.value = year;
-          option.textContent = year;
-          if (year === currentYear) {
-            option.selected = true;
-          }
-          yearSelect.appendChild(option);
+        if (!dept || !year || !rolls || !date || !room || !sep) {
+          continue;  // skip incomplete
         }
-        
-        // Handle year change
-        yearSelect.addEventListener('change', function() {
-          const newYear = parseInt(this.value);
-          const currentDate = instance.selectedDates[0] || new Date();
-          const newDate = new Date(currentDate);
-          newDate.setFullYear(newYear);
-          instance.setDate(newDate, true);
-        });
-        
-        // Replace the input with select
-        yearInput.parentNode.replaceChild(yearSelect, yearInput);
-        instance.yearElements[0] = yearSelect;
+
+        const line = `${dept}#${year}$${rolls}!${date}@${room}%${sep}`;
+        lines.push(line);
       }
-    }
-  });
-}
 
-function renderDeptForm() {
-  document.getElementById("deptFormArea").innerHTML = `
-    <div style="font-weight:bold; margin-bottom:10px;">
-      ${editMode !== null ? `Editing Department ${editMode+1}` : `Department ${currentDeptIndex+1} of ${numDepts}`}
-    </div>
-    <form id="currentForm">
-      <label>Department:</label>
-      <select class="dept" required>
-        <option disabled selected value="">-- Select Department --</option>
-        ${["PHYS","CS","MTM","CHEM","MCB","INC","ECO","ZOO","BEN","ENG","SANS","HIS","PHIL","POLS"]
-          .map(dep => `<option>${dep}</option>`).join("")}
-      </select>
-      <div class="warning deptWarn">Please select a department</div>
+      if (lines.length === 0) {
+        alert("No valid inputs found.");
+        return;
+      }
 
-      <label>Roll Numbers (e.g. 101,105-110,115):</label>
-      <input type="text" class="rolls" required>
-      <div class="warning rollsWarn">Please enter roll numbers</div>
+      // Build .txt content
+      const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+      const formData = new FormData();
+      formData.append("file", blob, "input.txt");
 
-      <div class="btnbar">
-        <button type="button" id="saveDept">${editMode !== null ? "Update Department" : "Save Department"}</button>
-      </div>
-    </form>
-  `;
-
-  // preload values if editing
-  if (editMode !== null) {
-    const entry = allEntries[editMode];
-    document.querySelector(".dept").value = entry.dept;
-    document.querySelector(".rolls").value = entry.rollsRaw;
-  }
-
-  document.getElementById("saveDept").onclick = () => saveDeptForm();
-}
-
-function saveDeptForm() {
-  const form = document.getElementById("currentForm");
-  if (!form) return false;
-
-  const dept = form.querySelector(".dept");
-  const rolls = form.querySelector(".rolls");
-
-  let valid = true;
-  form.querySelectorAll(".warning").forEach(w => w.style.display = "none");
-  form.querySelectorAll("input, select").forEach(el => el.classList.remove("error"));
-
-  if (!dept.value.trim()) { dept.classList.add("error"); form.querySelector(".deptWarn").style.display = "block"; valid = false; }
-  if (!rolls.value.trim() || !isValidRollInput(rolls.value.trim())) {
-    rolls.classList.add("error"); form.querySelector(".rollsWarn").style.display = "block"; valid = false;
-  }
-  if (!valid) return false;
-
-  const entry = {
-    date: commonData.date,
-    year: commonData.year,
-    room: commonData.room,
-    dept: dept.value.trim(), // Ensure we get the full value
-    rollsRaw: normalizeRollsRaw(rolls.value.trim()),
-    deptIndex: editMode !== null ? allEntries[editMode].deptIndex : (currentDeptIndex + 1),
-    totalDepts: numDepts
-  };
-
-  if (editMode !== null) {
-    allEntries[editMode] = entry;
-    editMode = null;
-  } else {
-    allEntries.push(entry);
-    currentDeptIndex++;
-  }
-
-  renderDeptList();
-  renderResultTable();
-  
-  if (currentDeptIndex < numDepts) {
-    renderDeptForm();
-  } else {
-    document.getElementById("deptFormArea").innerHTML = "<b>All departments added.</b>";
-    // Force show buttons when all departments are added
-    const buttonsContainer = document.getElementById("actionButtons");
-    if (buttonsContainer) {
-      buttonsContainer.style.display = "block";
-      console.log('Force showing buttons after completion');
-    }
-  }
-}
-
-function renderDeptList() {
-  const list = document.getElementById("deptList");
-  list.innerHTML = "";
-  allEntries.forEach((entry, idx) => {
-    const div = document.createElement("div");
-    div.className = "item";
-    // Use textContent to avoid any HTML parsing issues
-    const deptText = entry.dept || '';
-    div.innerHTML = `
-      <div><b>${entry.deptIndex}.</b> <span class="dept-name">${deptText}</span> → Rolls: ${entry.rollsRaw}</div>
-      <div class="actions">
-        <button onclick="editDept(${idx})">Edit</button>
-        <button class="remove" onclick="removeDept(${idx})">Remove</button>
-      </div>
-    `;
-    list.appendChild(div);
-  });
-}
-
-function renderResultTable() {
-  const tbody = document.querySelector("#resultTable tbody");
-  tbody.innerHTML = "";
-  allEntries.forEach((entry, idx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${entry.date}</td>
-      <td>${entry.deptIndex} / ${entry.totalDepts}</td>
-      <td><span class="dept-name">${entry.dept || ''}</span></td>
-      <td>${entry.year}</td>
-      <td>${entry.room}</td>
-      <td>${entry.rollsRaw}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-  document.getElementById("resultTable").style.display = allEntries.length ? "table" : "none";
-  
-  // Show/hide generate buttons based on completion
-  const buttonsContainer = document.getElementById("actionButtons");
-  console.log('Entries:', allEntries.length, 'Total Depts:', numDepts); // Debug log
-  console.log('Buttons container found:', !!buttonsContainer); // Debug log
-  
-  if (buttonsContainer) {
-    if (allEntries.length === numDepts && numDepts > 0) {
-      buttonsContainer.style.display = "block";
-      console.log('Showing buttons'); // Debug log
-    } else {
-      buttonsContainer.style.display = "none";
-      console.log('Hiding buttons'); // Debug log
-    }
-  }
-}
-
-window.editDept = function(idx) {
-  editMode = idx;
-  renderDeptForm();
-};
-
-window.removeDept = function(idx) {
-  allEntries.splice(idx, 1);
-  allEntries.forEach((e, i) => e.deptIndex = i + 1);
-  currentDeptIndex = allEntries.length;
-  renderDeptList();
-  renderResultTable();
-  if (currentDeptIndex < numDepts) {
-    renderDeptForm();
-  } else {
-    document.getElementById("deptFormArea").innerHTML = "<b>All departments added.</b>";
-  }
-};
-
-// Step 1 → Next to Common Inputs
-document.getElementById("startCommon").onclick = () => {
-  const numInput = document.getElementById("numDepts");
-  const warn = document.querySelector(".numWarn");
-  warn.style.display = "none";
-  numInput.classList.remove("error");
-
-  if (!numInput.value || numInput.value < 1) {
-    numInput.classList.add("error");
-    warn.style.display = "block";
-    return;
-  }
-  numDepts = parseInt(numInput.value);
-  document.getElementById("numDeptsContainer").style.display = "none";
-  document.getElementById("commonContainer").style.display = "block";
-  initializeFlatpickr(document.getElementById("commonDate"));
-};
-
-// Edit and Remove from Table
-window.editDeptFromTable = function(idx) {
-  // Set editMode and show the department form for editing
-  editMode = idx;
-  // Scroll to the department form area
-  document.getElementById("formsContainer").style.display = "block";
-  renderDeptForm();
-  document.getElementById("deptFormArea").scrollIntoView({ behavior: "smooth" });
-};
-
-window.removeDeptFromTable = function(idx) {
-  allEntries.splice(idx, 1);
-  allEntries.forEach((e, i) => e.deptIndex = i + 1);
-  currentDeptIndex = allEntries.length;
-  renderDeptList();
-  renderResultTable();
-  if (currentDeptIndex < numDepts) renderDeptForm();
-};
-
-// Step 2 → Save Common Data
-document.getElementById("saveCommon").onclick = () => {
-  const date = document.getElementById("commonDate");
-  const year = document.getElementById("commonYear");
-  const room = document.getElementById("commonRoom");
-
-  let valid = true;
-  document.querySelectorAll("#commonForm .warning").forEach(w => w.style.display = "none");
-  [date, year, room].forEach(el => el.classList.remove("error"));
-
-  if (!date.value.trim()) { date.classList.add("error"); document.querySelector(".dateWarn").style.display = "block"; valid = false; }
-  if (!year.value.trim()) { year.classList.add("error"); document.querySelector(".yearWarn").style.display = "block"; valid = false; }
-  if (!room.value.trim()) { room.classList.add("error"); document.querySelector(".roomWarn").style.display = "block"; valid = false; }
-
-  if (!valid) return;
-
-  commonData = { date: date.value.trim(), year: year.value, room: room.value };
-
-  renderCommonList();
-  document.getElementById("commonForm").style.display = "none";
-  document.getElementById("commonList").style.display = "block";
-  document.getElementById("formsContainer").style.display = "block";
-  renderDeptForm();
-};
-
-function renderCommonList() {
-  const list = document.getElementById("commonList");
-  list.innerHTML = `
-    <div class="item">
-      <div><b>Date:</b> ${commonData.date}, <b>Year:</b> ${commonData.year}, <b>Room:</b> ${commonData.room}</div>
-      <div class="actions">
-        <button onclick="editCommon()">Edit</button>
-        <button class="remove" onclick="removeCommon()">Remove</button>
-      </div>
-    </div>
-  `;
-}
-
-window.editCommon = function() {
-  document.getElementById("commonDate").value = commonData.date;
-  document.getElementById("commonYear").value = commonData.year;
-  document.getElementById("commonRoom").value = commonData.room;
-  commonData = null;
-  document.getElementById("commonList").style.display = "none";
-  document.getElementById("commonForm").style.display = "block";
-  document.getElementById("formsContainer").style.display = "none";
-};
-
-window.removeCommon = function() {
-  commonData = null;
-  document.getElementById("commonList").style.display = "none";
-  document.getElementById("commonForm").style.display = "block";
-  document.getElementById("formsContainer").style.display = "none";
-  allEntries.length = 0;
-  renderResultTable();
-};
-
-// Generate Allotment Function - Updated to match HTML structure
-async function generateAllotment() {
-  if (!allEntries.length) {
-    alert('Please add at least one department entry before generating allotment.');
-    return;
-  }
-
-  const generateBtn = document.getElementById('generateBtn');
-  generateBtn.disabled = true;
-  generateBtn.textContent = 'Loading...';
-
-  try {
-    // Send all entries to backend
-    const response = await fetch('/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        entries: allEntries,
-        commonData: commonData
+      // Send to Flask
+      fetch("/", {
+          method: "POST",
+          body: formData
       })
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      alert('Allotment generated successfully!');
-      console.log('Generated allotment:', result);
-    } else {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-  } catch (error) {
-    console.error('Error generating allotment:', error);
-    alert('Error generating allotment. Please check the console for details.');
-  } finally {
-    generateBtn.disabled = false;
-    generateBtn.textContent = 'Generate Allotment';
-  }
-}
-
-// Export Data Function
-/*function exportData() {
-  if (!allEntries.length) {
-    alert('No data to export. Please add entries first.');
-    return;
-  }
-
-  const exportData = {
-    commonData: commonData,
-    entries: allEntries,
-    exportDate: new Date().toISOString()
-  };
-
-  const dataStr = JSON.stringify(exportData, null, 2);
-  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(dataBlob);
-  
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `seat_allotment_${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-*/
-// Individual entry generation for single departments
-async function generateSingleEntry(entry) {
-  try {
-    const response = await fetch('/generate-single', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: '', // Not available in current structure
-        roll: entry.rollsRaw,
-        department: entry.dept,
-        room: entry.room,
-        year: entry.year,
-        date: entry.date
+      .then(response => response.text())
+      .then(html => {
+          document.open();
+          document.write(html);
+          document.close();
       })
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      return result;
-    } else {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      .catch(err => console.error("❌ Error:", err));
     }
-  } catch (error) {
-    console.error('Error generating single entry:', error);
-    throw error;
-  }
-}
-
-// Make functions globally available
-window.generateAllotment = generateAllotment;
-//window.exportData = exportData;
-window.generateSingleEntry = generateSingleEntry;
-</script>
+  </script>
 </body>
 </html>

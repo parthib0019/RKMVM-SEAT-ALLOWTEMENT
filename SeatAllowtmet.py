@@ -231,6 +231,7 @@ def index():
 
         with open(filepath, "r") as f:
             lines = f.read().splitlines()
+            print(lines)
 
         rnd.shuffle(lines)
         pdf_files = []
@@ -267,7 +268,7 @@ def index():
 
         return render_template("seating.html", pdf_files=pdf_files)
 
-    return render_template("seatallot_new.html")
+    return render_template("index.html")
 
 @app.route("/download/<filename>")
 def download_file(filename):
