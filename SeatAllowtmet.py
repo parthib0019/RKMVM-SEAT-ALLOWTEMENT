@@ -68,8 +68,9 @@ def parse_line(line: str):
     subj_year_rolls, date_room = line.split("!")
     subj_year, roll_ranges = subj_year_rolls.split("$")
     subject, year = subj_year.split("#")
-    roll_range, date, room = roll_ranges, *date_room.split("@")
-    return subject.strip(), year.strip(), roll_range.strip(), date.strip(), room.strip()
+    roll_range, date, rooms = roll_ranges, *date_room.split("@")
+    room, separation = rooms.split("%")
+    return subject.strip(), year.strip(), roll_range.strip(), date.strip(), room.strip(), separation.strip()
 
 def expand_rolls(roll_text: str):
     rolls = []
@@ -83,9 +84,9 @@ def expand_rolls(roll_text: str):
     return rolls
 
 # ------------------ Allocation ------------------
-def can_place(seat_matrix, c, r, dept):
+def can_place(seat_matrix, c, r, dept, Separation):
     #print(f"Checking placement at ({c}, {r}) for dept {dept}")
-    separation = 1
+    separation = int(Separation)
     for dc in range(-1*separation, separation):
         for dr in range(-1*separation, separation):
             if dc == 0 and dr == 0:
@@ -101,7 +102,7 @@ def can_place(seat_matrix, c, r, dept):
 
 
 
-def allocate_seats(seat_matrix, rolls, dept, year):
+def allocate_seats(seat_matrix, rolls, dept, year, separation):
     if not seat_matrix:
         return seat_matrix
 
@@ -113,7 +114,7 @@ def allocate_seats(seat_matrix, rolls, dept, year):
                 seat_matrix.reverse()
                 return seat_matrix
 
-            if seat_matrix[c][r] == "e" and can_place(seat_matrix, c, r, dept):
+            if seat_matrix[c][r] == "e" and can_place(seat_matrix, c, r, dept, separation):
                 roll = rolls.pop(0)            # assign one roll only
                 seat_matrix[c][r] = (roll, dept, year)
     return seat_matrix
@@ -237,14 +238,14 @@ def index():
             if not line.strip():
                 continue
             print(f"Processing line: {line}")
-            subject, year, roll_range, date, room = parse_line(line)
+            subject, year, roll_range, date, room, Separation = parse_line(line)
             rolls = expand_rolls(roll_range)
             room_key = f"{room}_{date.replace('/', '-')}"   # unique key per room per date
 
             if room_key in totalRooms:
                 # Same room on same date → fetch old matrix and update
                 seat_matrix = totalRooms[room_key][0]
-                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
+                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year, Separation)
                 totalRooms[room_key] = (seat_matrix, date)
 
             else:
@@ -253,7 +254,7 @@ def index():
                 if not seat_matrix:
                     print(f"⚠️ No room info found for Room {room}")
                     continue
-                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year)
+                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year, Separation)
                 totalRooms[room_key] = (seat_matrix, date)
 
 
