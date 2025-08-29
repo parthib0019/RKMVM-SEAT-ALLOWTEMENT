@@ -134,8 +134,7 @@ def rotate_for_pdf(seat_matrix):
 def export_pdf(pdf_path, totalRooms):
     """
     totalRooms = {
-        "Room15-2025-08-25": (seat_matrix, date, subject, year),
-        "Room20-2025-08-25": (seat_matrix, date, subject, year),
+        "Room15-2025-08-25": (seat_matrix, date),
         ...
     }
     """
@@ -143,15 +142,18 @@ def export_pdf(pdf_path, totalRooms):
     elements = []
     styles = getSampleStyleSheet()
 
+    # Constants for cell sizes
+    SEAT_WIDTH = 80   # ~ 11 characters
+    GUTTER_WIDTH = 15 # ~ 1 character
+    ROW_HEIGHT = 25
+
     for room, (seat_matrix, date) in totalRooms.items():
         # --- Header ---
-        room = room.replace("-", "/")  # for better display
-        room = room.replace(date, " ")  # revert date part
-        room = room.replace("_", " ")
+        room_display = room.split("_")[0]  # original room number
         header_text = (
             "<b>RAMAKRISHNA MISSION VIDYAMANDIRA</b><br/>"
             "Howrah, Belur: 711202<br/><br/>"
-            f"<b>Date:</b> {date} &nbsp;&nbsp;&nbsp; <b>Room:</b> {room.replace(date, '')}<br/>"
+            f"<b>Date:</b> {date} &nbsp;&nbsp;&nbsp; <b>Room:</b> {room_display}<br/>"
         )
         elements.append(Paragraph(header_text, styles["Title"]))
         elements.append(Spacer(1, 12))
@@ -169,41 +171,51 @@ def export_pdf(pdf_path, totalRooms):
 
                 if r < len(seat_matrix[c]):
                     seat = seat_matrix[c][r]
-                    if seat == "e":
-                        row_data.append(" ")  # empty seat with border
-                    elif seat is None:
-                        row_data.append(None)  # no seat (no border)
-                    else:
+                    if seat == "e":  # empty seat with border
+                        row_data.append("")  
+                    elif seat is None:  # no seat at all
+                        row_data.append(None)
+                    else:  # filled seat
                         roll, dept, yr = seat
                         row_data.append(f"{roll}\n{dept}-{yr}")
                 else:
                     row_data.append(None)
             data.append(row_data)
 
-        # --- Create Table ---
-        table = Table(data)
+        # --- Create custom colWidths ---
+        num_cols = len(data[0])
+        colWidths = []
+        for c in range(num_cols):
+            # If this column is gutter
+            if all(row[c] == "   " or row[c] is None for row in data):
+                colWidths.append(GUTTER_WIDTH)
+            else:
+                colWidths.append(SEAT_WIDTH)
+
+        rowHeights = [ROW_HEIGHT for _ in range(len(data))]
+        table = Table(data, colWidths=colWidths, rowHeights=rowHeights)
+
+        # --- Styling ---
         style_commands = []
 
         for r, row in enumerate(data):
             for c, cell in enumerate(row):
-                if cell is None:
+                if cell is None:  # no seat → no border
                     style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
-                elif cell == "   ":
+                elif cell == "   ":  # gutter → no border
                     style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
-                else:
+                else:  # filled seat or empty seat → border
                     style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
 
-        # Merge gutter columns
-        num_cols = len(data[0])
+        # Merge gutters
         for c in range(num_cols):
-            if all(row[c] == "GUTTER" for row in data):
+            if all(row[c] == "   " for row in data):
                 style_commands.append(("SPAN", (c, 0), (c, len(data)-1)))
                 style_commands.append(("BOX", (c, 0), (c, len(data)-1), 0, colors.white))
                 style_commands.append(("BACKGROUND", (c, 0), (c, len(data)-1), colors.white))
-                style_commands.append(("ALIGN", (c, 0), (c, len(data)-1), "CENTER"))
-                style_commands.append(("VALIGN", (c, 0), (c, len(data)-1), "MIDDLE"))
 
         style_commands.append(("ALIGN", (0, 0), (-1, -1), "CENTER"))
+        style_commands.append(("VALIGN", (0, 0), (-1, -1), "MIDDLE"))
         table.setStyle(TableStyle(style_commands))
 
         elements.append(table)
