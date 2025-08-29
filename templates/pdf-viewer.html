@@ -1,0 +1,192 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seating Allotment - Generated PDFs</title>
+  <style>
+    /* Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #fffaf5;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      background: linear-gradient(to right, #e67e22, #f39c12);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    p.text-muted {
+      color: #777;
+      font-size: 0.95rem;
+    }
+
+    /* Alerts */
+    .alert {
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-weight: 500;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+    }
+
+    .alert-info {
+      background: #fff2e6;
+      color: #e67e22;
+      border-left: 5px solid #e67e22;
+    }
+
+    .alert-danger {
+      background: #ffeaea;
+      color: #d63031;
+      border-left: 5px solid #d63031;
+    }
+
+    /* List Group */
+    .list-group {
+      list-style: none;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+      background: white;
+    }
+
+    .list-group-item {
+      padding: 14px 18px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .list-group-item:last-child {
+      border-bottom: none;
+    }
+
+    .list-group-item:hover {
+      background: #fff6ef;
+    }
+
+    .list-group-item.text-muted {
+      color: #999;
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+    }
+
+    .btn-primary {
+      background: #e67e22;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #cf711f;
+      transform: translateY(-1px);
+    }
+
+    .btn-outline-primary {
+      border: 2px solid #e67e22;
+      color: #e67e22;
+      background: white;
+    }
+
+    .btn-outline-primary:hover {
+      background: #e67e22;
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    .btn-outline-secondary {
+      border: 2px solid #999;
+      color: #555;
+      background: white;
+    }
+
+    .btn-outline-secondary:hover {
+      background: #777;
+      color: white;
+      transform: translateY(-1px);
+    }
+
+    .me-2 {
+      margin-right: 8px;
+    }
+
+    .mt-4 {
+      margin-top: 24px;
+    }
+
+    .mb-4 {
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="text-center mb-4">
+      <h2>Generated PDF Files</h2>
+      <p class="text-muted">Below is the list of generated seating allotment PDFs available for download.</p>
+    </div>
+
+    {% if pdf_files %}
+      <ul class="list-group">
+        {% for pdf in pdf_files %}
+          <li class="list-group-item">
+            <span>{{ pdf }}</span>
+            <a href="{{ url_for('download_file', filename=pdf) }}" class="btn btn-primary btn-sm" download="{{ pdf }}">
+              Download
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="alert alert-info text-center">
+        No PDF files generated yet.
+      </div>
+    {% endif %}
+
+    <div class="text-center mt-4">
+      <a href="/" class="btn btn-outline-primary">Back to Home</a>
+    </div>
+  </div>
+</body>
+</html>

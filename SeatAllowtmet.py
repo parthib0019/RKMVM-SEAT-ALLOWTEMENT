@@ -278,7 +278,8 @@ def index():
         pdf_files = ["All_Seating_Allotments.pdf"]
 
 
-        return render_template("seating.html", pdf_files=pdf_files)
+        return render_template("pdf-viewer.html", pdf_files=pdf_files)
+
 
     return render_template("index.html")
 

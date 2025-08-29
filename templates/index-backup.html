@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Seat Allocation Input</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h2 {
+      text-align: center;
+    }
+    .form-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, select {
+      padding: 8px;
+      width: 220px;
+      margin-top: 5px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      background: #007BFF;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .calendar {
+      display: none;
+      position: absolute;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      padding: 10px;
+      z-index: 10;
+    }
+    .calendar-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .days { display: grid; grid-template-columns: repeat(7, 30px); gap: 5px; text-align: center; }
+    .day { cursor: pointer; padding: 5px; border-radius: 4px; }
+    .day:hover { background: #007BFF; color: #fff; }
+
+  </style>
+</head>
+<body>
+  <h2>Seat Allocation Input</h2>
+
+  <!-- Number of Inputs -->
+  <div class="form-section">
+    <label for="numInputs">How many inputs?</label>
+    <input type="number" id="numInputs" min="1" value="1">
+    <button onclick="generateForms()">Generate</button>
+  </div>
+
+  <!-- Form Container -->
+  <form id="mainForm" method="POST" enctype="multipart/form-data" action="/">
+    <div id="inputsContainer"></div>
+    <button type="button" onclick="submitData()">Submit</button>
+  </form>
+  <div class="calendar" id="calendar"></div>
+
+
+  <script>
+    const inputsContainer = document.getElementById("inputsContainer");
+
+    // Generate form blocks dynamically
+    function generateForms() {
+      inputsContainer.innerHTML = "";
+      const n = document.getElementById("numInputs").value;
+
+      for (let i=0; i<n; i++) {
+        const div = document.createElement("div");
+        div.classList.add("form-section");
+        div.innerHTML = `
+          <h3>Input ${i+1}</h3>
+          <label>Department:</label>
+          <select class="dept${i}">
+            <option value="ENGA">ENGA</option>
+            <option value="PHIL">PHIL</option>
+            <option value="MATH">MATH</option>
+            <option value="COMS">COMS</option>
+          </select>
+
+          <label>Year:</label>
+          <select class="year${i}">
+            <option value="UG-1">UG-1</option>
+            <option value="UG-2">UG-2</option>
+            <option value="UG-3">UG-3</option>
+          </select>
+
+          <label>Roll Range:</label>
+          <input type="text" class="rolls${i}" placeholder="e.g. 1-50,55,60-70">
+
+          <label>Date:</label>
+          <input type="text" class="date${i}" placeholder="Select Date" readonly onclick="showCalendar(this)">
+
+
+          <label>Room No:</label>
+          <select class="room${i}">
+            <option value="1">1</option>
+            <option value="5">5</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+          </select>
+
+          <label>Separation:</label>
+          <select class="sep${i}">
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        `;
+        inputsContainer.appendChild(div);
+      }
+    }
+
+    // Collect data and send to Flask
+    function submitData() {
+      const n = document.getElementById("numInputs").value;
+      let lines = [];
+
+      for (let i=0; i<n; i++) {
+        const dept = document.querySelector(`.dept${i}`).value.trim();
+        const year = document.querySelector(`.year${i}`).value.trim();
+        const rolls = document.querySelector(`.rolls${i}`).value.trim();
+        const date = document.querySelector(`.date${i}`).value.trim();
+        const room = document.querySelector(`.room${i}`).value.trim();
+        const sep = document.querySelector(`.sep${i}`).value.trim();
+
+        if (!dept || !year || !rolls || !date || !room || !sep) {
+          continue;  // skip incomplete
+        }
+
+        const line = `${dept}#${year}$${rolls}!${date}@${room}%${sep}`;
+        lines.push(line);
+      }
+
+      if (lines.length === 0) {
+        alert("No valid inputs found.");
+        return;
+      }
+
+      // Build .txt content
+      const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+      const formData = new FormData();
+      formData.append("file", blob, "input.txt");
+
+      // Send to Flask
+      fetch("/", {
+          method: "POST",
+          body: formData
+      })
+      .then(response => response.text())
+      .then(html => {
+          document.open();
+          document.write(html);
+          document.close();
+      })
+      .catch(err => console.error("❌ Error:", err));
+    }
+    const calendar = document.getElementById("calendar");
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const dayNames = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+    let currentDate = new Date();
+    let activeInput = null;
+
+    function showCalendar(input) {
+      activeInput = input;
+      renderCalendar(currentDate);
+      const rect = input.getBoundingClientRect();
+      calendar.style.top = (window.scrollY + rect.bottom + 5) + "px";
+      calendar.style.left = rect.left + "px";
+      calendar.style.display = "block";
+    }
+
+    function renderCalendar(date) {
+      calendar.innerHTML = "";
+      const month = date.getMonth(), year = date.getFullYear();
+
+      // Header
+      const header = document.createElement("div");
+      header.classList.add("calendar-header");
+      header.innerHTML = `<button id="prev">&#9664;</button>
+                          <span>${monthNames[month]} ${year}</span>
+                          <button id="next">&#9654;</button>`;
+      calendar.appendChild(header);
+
+      // Days of week
+      const daysRow = document.createElement("div");
+      daysRow.classList.add("days");
+      dayNames.forEach(d => {
+        const cell = document.createElement("div");
+        cell.innerHTML = "<b>"+d+"</b>";
+        daysRow.appendChild(cell);
+      });
+      calendar.appendChild(daysRow);
+
+      // Dates
+      const firstDay = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month+1, 0).getDate();
+      const daysGrid = document.createElement("div");
+      daysGrid.classList.add("days");
+
+      for (let i=0;i<firstDay;i++) daysGrid.appendChild(document.createElement("div"));
+      for (let d=1; d<=lastDate; d++) {
+        const day = document.createElement("div");
+        day.classList.add("day");
+        day.textContent = d;
+        day.onclick = () => {
+          activeInput.value = `${d}/${month+1}/${year}`;
+          calendar.style.display = "none";
+        };
+        daysGrid.appendChild(day);
+      }
+      calendar.appendChild(daysGrid);
+
+      document.getElementById("prev").onclick = () => {
+        currentDate = new Date(year, month-1, 1);
+        renderCalendar(currentDate);
+      };
+      document.getElementById("next").onclick = () => {
+        currentDate = new Date(year, month+1, 1);
+        renderCalendar(currentDate);
+      };
+    }
+
+    // Close calendar on outside click
+    document.addEventListener("click", (e) => {
+      if (!calendar.contains(e.target) && e.target !== activeInput) {
+        calendar.style.display = "none";
+      }
+    });
+
+  </script>
+</body>
+</html>
