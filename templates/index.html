@@ -41,6 +41,21 @@
     button:hover {
       background: #0056b3;
     }
+    .calendar {
+      display: none;
+      position: absolute;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      padding: 10px;
+      z-index: 10;
+    }
+    .calendar-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .days { display: grid; grid-template-columns: repeat(7, 30px); gap: 5px; text-align: center; }
+    .day { cursor: pointer; padding: 5px; border-radius: 4px; }
+    .day:hover { background: #007BFF; color: #fff; }
+
   </style>
 </head>
 <body>
@@ -58,6 +73,8 @@
     <div id="inputsContainer"></div>
     <button type="button" onclick="submitData()">Submit</button>
   </form>
+  <div class="calendar" id="calendar"></div>
+
 
   <script>
     const inputsContainer = document.getElementById("inputsContainer");
@@ -91,7 +108,8 @@
           <input type="text" class="rolls${i}" placeholder="e.g. 1-50,55,60-70">
 
           <label>Date:</label>
-          <input type="text" class="date${i}" placeholder="dd/mm/yyyy">
+          <input type="text" class="date${i}" placeholder="Select Date" readonly onclick="showCalendar(this)">
+
 
           <label>Room No:</label>
           <select class="room${i}">
@@ -155,6 +173,79 @@
       })
       .catch(err => console.error("❌ Error:", err));
     }
+    const calendar = document.getElementById("calendar");
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const dayNames = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+    let currentDate = new Date();
+    let activeInput = null;
+
+    function showCalendar(input) {
+      activeInput = input;
+      renderCalendar(currentDate);
+      const rect = input.getBoundingClientRect();
+      calendar.style.top = (window.scrollY + rect.bottom + 5) + "px";
+      calendar.style.left = rect.left + "px";
+      calendar.style.display = "block";
+    }
+
+    function renderCalendar(date) {
+      calendar.innerHTML = "";
+      const month = date.getMonth(), year = date.getFullYear();
+
+      // Header
+      const header = document.createElement("div");
+      header.classList.add("calendar-header");
+      header.innerHTML = `<button id="prev">&#9664;</button>
+                          <span>${monthNames[month]} ${year}</span>
+                          <button id="next">&#9654;</button>`;
+      calendar.appendChild(header);
+
+      // Days of week
+      const daysRow = document.createElement("div");
+      daysRow.classList.add("days");
+      dayNames.forEach(d => {
+        const cell = document.createElement("div");
+        cell.innerHTML = "<b>"+d+"</b>";
+        daysRow.appendChild(cell);
+      });
+      calendar.appendChild(daysRow);
+
+      // Dates
+      const firstDay = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month+1, 0).getDate();
+      const daysGrid = document.createElement("div");
+      daysGrid.classList.add("days");
+
+      for (let i=0;i<firstDay;i++) daysGrid.appendChild(document.createElement("div"));
+      for (let d=1; d<=lastDate; d++) {
+        const day = document.createElement("div");
+        day.classList.add("day");
+        day.textContent = d;
+        day.onclick = () => {
+          activeInput.value = `${d}/${month+1}/${year}`;
+          calendar.style.display = "none";
+        };
+        daysGrid.appendChild(day);
+      }
+      calendar.appendChild(daysGrid);
+
+      document.getElementById("prev").onclick = () => {
+        currentDate = new Date(year, month-1, 1);
+        renderCalendar(currentDate);
+      };
+      document.getElementById("next").onclick = () => {
+        currentDate = new Date(year, month+1, 1);
+        renderCalendar(currentDate);
+      };
+    }
+
+    // Close calendar on outside click
+    document.addEventListener("click", (e) => {
+      if (!calendar.contains(e.target) && e.target !== activeInput) {
+        calendar.style.display = "none";
+      }
+    });
+
   </script>
 </body>
 </html>
