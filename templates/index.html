@@ -461,7 +461,7 @@
         <option disabled selected value="">-- Select Year --</option>
         <option>UG-I</option><option>UG-II</option><option>UG-III</option><option>UG-IV</option><option>PG-I</option><option>PG-II</option>
       </select>
-      <div class="warning yearWarn">Please select a valid year (e.g., UG-1, UG-2)</div>
+      <div class="warning yearWarn">Please select a valid year (e.g., UG-I, UG-II)</div>
       <label>Room:</label>
       <select id="commonRoom" required>
         <option disabled selected value="">-- Select Room --</option>
@@ -482,7 +482,6 @@
     <input type="number" id="numDepts" min="1" required>
     <div class="warning numWarn">Please enter a valid number of departments (e.g., 1 or more)</div>
     <div class="btnbar">
-      <button type="button" class="back-btn" onclick="goBackToCommon()">Back</button>
       <button type="button" id="startCommon">Start Inputting Data</button>
     </div>
   </div>
@@ -491,9 +490,6 @@
   <div id="formsContainer" class="form-container" style="display:none;">
     <div id="deptFormArea"></div>
     <div class="item-list" id="deptList"></div>
-    <div class="btnbar" id="deptBackBtn" style="display:none;">
-      <button type="button" class="back-btn" onclick="goBackToNumDepts()">Back</button>
-    </div>
   </div>
 
   <!-- RESULT TABLE -->
@@ -512,8 +508,9 @@
       <tbody></tbody>
     </table>
     <div id="actionButtons" class="btnbar" style="margin-top: 20px; display: none;">
-      <button type="button" class="back-btn" onclick="goBackToDeptForm()">Back</button>
+      <button type="button" class="back-btn" onclick="showConfirmModal('backToDeptForm')">Back</button>
       <button type="button" id="generateBtn" onclick="showConfirmModal('generate')">Generate Allotment</button>
+      <button type="button" id="resetAllBtn" class="remove" onclick="showConfirmModal('resetAll')">Reset All</button>
     </div>
   </div>
 
@@ -539,6 +536,7 @@
     let isCalendarOpen = false;
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    const allDepts = ["PHYSA", "CEMA", "MTMA", "MCBA", "CMSA", "INCA", "ACEM", "ECOA", "ZOOA", "BNGA", "ENGA", "SNSA", "HISA", "PHILA", "POLA"];
 
     function toggleTheme() {
       const body = document.body;
@@ -559,7 +557,130 @@
       document.getElementById("commonDate").value = dateStr;
       selectedDate = new Date(today);
       currentDate = new Date(today);
+      addEnterKeyListeners();
+      window.addEventListener('popstate', handlePopState);
     });
+
+    function handlePopState() {
+      console.log('Browser back button triggered, state:', { currentDeptIndex, numDepts, allEntriesLength: allEntries.length });
+      if (document.getElementById("formsContainer").style.display === "block") {
+        currentDeptIndex = Math.min(allEntries.length, numDepts > 0 ? numDepts - 1 : 0);
+        goBackToDeptForm();
+      }
+    }
+
+    function addEnterKeyListeners() {
+      const commonForm = document.getElementById("commonForm");
+      const commonInputs = [document.getElementById("commonDate"), document.getElementById("commonYear"), document.getElementById("commonRoom")];
+      commonInputs.forEach((input, index) => {
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (validateField(input)) {
+              const nextIndex = index + 1;
+              if (nextIndex < commonInputs.length) {
+                commonInputs[nextIndex].focus();
+              } else {
+                document.getElementById("saveCommon").click();
+              }
+            }
+          }
+        });
+      });
+
+      document.getElementById("numDeptsContainer").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && e.target.id === "numDepts") {
+          e.preventDefault();
+          if (validateNumDepts()) {
+            document.getElementById("startCommon").click();
+          }
+        }
+      });
+
+      document.getElementById("formsContainer").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && document.getElementById("currentForm")) {
+          e.preventDefault();
+          const form = document.getElementById("currentForm");
+          const inputs = [form.querySelector(".dept"), form.querySelector(".rolls"), form.querySelector(".sep")];
+          const currentIndex = inputs.indexOf(e.target);
+          if (currentIndex >= 0 && validateField(inputs[currentIndex])) {
+            const nextIndex = currentIndex + 1;
+            if (nextIndex < inputs.length) {
+              inputs[nextIndex].focus();
+            } else {
+              document.getElementById("saveDept").click();
+            }
+          }
+        }
+      });
+    }
+
+    function validateField(input) {
+      if (input.id === "commonDate") {
+        return validateDate();
+      } else if (input.id === "commonYear" || input.id === "commonRoom") {
+        const warn = document.querySelector(`.${input.id.replace("common", "").toLowerCase()}Warn`);
+        if (!input.value.trim()) {
+          input.classList.add("error");
+          warn.style.display = "block";
+          return false;
+        }
+        input.classList.remove("error");
+        warn.style.display = "none";
+        return true;
+      } else if (input.classList.contains("dept")) {
+        const warn = input.parentElement.querySelector(".deptWarn");
+        if (!input.value.trim()) {
+          input.classList.add("error");
+          warn.style.display = "block";
+          return false;
+        }
+        input.classList.remove("error");
+        warn.style.display = "none";
+        return true;
+      } else if (input.classList.contains("rolls")) {
+        const warn = input.parentElement.querySelector(".rollsWarn");
+        if (!input.value.trim() || !isValidRollInput(input.value.trim())) {
+          input.classList.add("error");
+          warn.textContent = "Please enter valid roll numbers (e.g., 1-50,55,60-70)";
+          warn.style.display = "block";
+          return false;
+        }
+        if (hasDuplicateRolls(input.value.trim(), commonData ? commonData.year : '', editMode)) {
+          input.classList.add("error");
+          warn.textContent = "Same roll numbers are already assigned for this year";
+          warn.style.display = "block";
+          return false;
+        }
+        input.classList.remove("error");
+        warn.style.display = "none";
+        return true;
+      } else if (input.classList.contains("sep")) {
+        const warn = input.parentElement.querySelector(".sepWarn");
+        if (!input.value.trim()) {
+          input.classList.add("error");
+          warn.style.display = "block";
+          return false;
+        }
+        input.classList.remove("error");
+        warn.style.display = "none";
+        return true;
+      }
+      return true;
+    }
+
+    function validateNumDepts() {
+      const numInput = document.getElementById("numDepts");
+      const warn = document.querySelector(".numWarn");
+      if (!numInput.value || numInput.value < 1) {
+        numInput.classList.add("error");
+        warn.style.display = "block";
+        return false;
+      }
+      numInput.classList.remove("error");
+      warn.style.display = "none";
+      return true;
+    }
 
     function showCalendar(input) {
       activeInput = input;
@@ -578,7 +699,6 @@
       const month = currentDate.getMonth();
       const year = currentDate.getFullYear();
 
-      // Header
       const header = document.createElement("div");
       header.classList.add("calendar-header");
       header.innerHTML = `<button id="prevMonth">&#9664;</button>
@@ -586,7 +706,6 @@
                           <button id="nextMonth">&#9654;</button>`;
       calendar.appendChild(header);
 
-      // Days of week
       const daysRow = document.createElement("div");
       daysRow.classList.add("calendar-grid");
       dayNames.forEach(d => {
@@ -597,7 +716,6 @@
       });
       calendar.appendChild(daysRow);
 
-      // Dates
       const firstDay = new Date(year, month, 1).getDay();
       const lastDate = new Date(year, month + 1, 0).getDate();
       const daysGrid = document.createElement("div");
@@ -611,7 +729,7 @@
 
       for (let d = 1; d <= lastDate; d++) {
         const currentCalendarDate = new Date(year, month, d);
-        const isPastDate = currentCalendarDate < today.setHours(0,0,0,0);
+        const isPastDate = currentCalendarDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const isSelected = selectedDate && 
           selectedDate.getDate() === d && 
           selectedDate.getMonth() === month && 
@@ -657,39 +775,42 @@
       }
     });
 
-    function goBackToCommon() {
-      document.getElementById("commonContainer").style.display = "block";
-      document.getElementById("commonForm").style.display = "block";
-      document.getElementById("commonList").style.display = commonData ? "block" : "none";
-      document.getElementById("numDeptsContainer").style.display = "none";
-      document.getElementById("formsContainer").style.display = "none";
-      document.getElementById("resultTable").style.display = allEntries.length ? "table" : "none";
-      document.getElementById("actionButtons").style.display = allEntries.length === numDepts && numDepts > 0 ? "block" : "none";
-    }
-
-    function goBackToNumDepts() {
-      document.getElementById("commonContainer").style.display = "none";
-      document.getElementById("numDeptsContainer").style.display = "block";
-      document.getElementById("formsContainer").style.display = "none";
-      document.getElementById("resultTable").style.display = allEntries.length ? "table" : "none";
-      document.getElementById("actionButtons").style.display = allEntries.length === numDepts && numDepts > 0 ? "block" : "none";
-      if (editMode !== null) {
-        editMode = null;
-        currentDeptIndex = allEntries.length;
-        renderDeptList();
-      }
-    }
-
     function goBackToDeptForm() {
-      document.getElementById("commonContainer").style.display = "none";
-      document.getElementById("numDeptsContainer").style.display = "none";
-      document.getElementById("formsContainer").style.display = "block";
-      document.getElementById("resultTable").style.display = allEntries.length ? "table" : "none";
-      document.getElementById("actionButtons").style.display = allEntries.length === numDepts && numDepts > 0 ? "block" : "none";
-      if (currentDeptIndex < numDepts) {
-        renderDeptForm();
-      } else {
-        document.getElementById("deptFormArea").innerHTML = "<b>All departments added.</b>";
+      console.log('goBackToDeptForm called, state:', { currentDeptIndex, numDepts, allEntriesLength: allEntries.length });
+      try {
+        editMode = null;
+        currentDeptIndex = Math.min(allEntries.length, numDepts > 0 ? numDepts - 1 : 0);
+        document.getElementById("commonContainer").style.display = "none";
+        document.getElementById("numDeptsContainer").style.display = "none";
+        document.getElementById("formsContainer").style.display = "block";
+        document.getElementById("resultTable").style.display = allEntries.length ? "table" : "none";
+        document.getElementById("actionButtons").style.display = allEntries.length === numDepts && numDepts > 0 ? "block" : "none";
+        if (!commonData) {
+          console.log('No common data, redirecting to common form');
+          document.getElementById("commonContainer").style.display = "block";
+          document.getElementById("commonForm").style.display = "block";
+          document.getElementById("commonList").style.display = "none";
+          document.getElementById("formsContainer").style.display = "none";
+          alert('Please enter common data first.');
+          return;
+        }
+        if (currentDeptIndex < numDepts) {
+          console.log('Rendering form for dept:', currentDeptIndex + 1);
+          renderDeptForm();
+        } else {
+          console.log('All depts added or none specified');
+          document.getElementById("deptFormArea").innerHTML = numDepts > 0 ? "<b>All departments added.</b>" : "<b>Specify number of departments.</b>";
+          if (numDepts === 0) {
+            document.getElementById("numDeptsContainer").style.display = "block";
+            document.getElementById("commonContainer").style.display = "block";
+            document.getElementById("commonForm").style.display = "none";
+            document.getElementById("commonList").style.display = "block";
+            document.getElementById("formsContainer").style.display = "none";
+          }
+        }
+      } catch (error) {
+        console.error('Error in goBackToDeptForm:', error);
+        alert('Error navigating back. Check console.');
       }
     }
 
@@ -701,15 +822,6 @@
       if (!dateStr || !isValidDateFormat(dateStr)) {
         dateInput.classList.add("error");
         dateWarn.textContent = "Please enter a valid date (e.g., 30-10-2025, format: dd-mm-yyyy)";
-        dateWarn.style.display = "block";
-        return false;
-      }
-
-      const [day, month, year] = dateStr.split('-').map(Number);
-      const inputDate = new Date(year, month - 1, day);
-      if (inputDate < today) {
-        dateInput.classList.add("error");
-        dateWarn.textContent = "Please select a date on or after today";
         dateWarn.style.display = "block";
         return false;
       }
@@ -824,40 +936,51 @@
     }
 
     function renderDeptForm() {
-      document.getElementById("deptFormArea").innerHTML = `
-        <div style="font-weight:bold; margin-bottom:10px;">
-          ${editMode !== null ? `Editing Department ${editMode+1}` : `Department ${currentDeptIndex+1} of ${numDepts}`}
-        </div>
-        <form id="currentForm">
-          <label>Department:</label>
-          <select class="dept" required>
-            <option disabled selected value="">-- Select Department --</option>
-            <option>PHYA</option><option>CEMA</option><option>MTMA</option><option>MCBA</option><option>CMSA</option><option>INCA</option><option>ACEM</option><option>ECOA</option><option>ZOOA</option><option>BNGA</option><option>ENGA</option><option>SNSA</option><option>HISA</option><option>PHILA</option><option>POLA</option>
-          </select>
-          <div class="warning deptWarn">Please select a department (e.g., ENGA, PHIL)</div>
-          <label>Roll Numbers (e.g. 1-50,55,60-70):</label>
-          <input type="text" class="rolls" required>
-          <div class="warning rollsWarn">Please enter valid roll numbers (e.g., 1-50,55,60-70)</div>
-          <label>Separation:</label>
-          <select class="sep" required>
-            <option disabled selected value="">-- Select Separation --</option>
-            <option>1</option><option>2</option>
-          </select>
-          <div class="warning sepWarn">Please select a valid separation (e.g., 1, 2)</div>
-          <div class="btnbar">
-            <button type="button" id="saveDept">${editMode !== null ? "Update Department" : "Save Department"}</button>
-            <button type="button" onclick="resetDeptForm()">Reset</button>
+      console.log('Rendering dept form, index:', currentDeptIndex, 'numDepts:', numDepts);
+      try {
+        const selectedDepts = allEntries.filter((_, i) => i !== editMode).map(entry => entry.dept);
+        const availableDepts = allDepts.filter(dept => !selectedDepts.includes(dept));
+        let deptOptions = '<option disabled selected value="">-- Select Department --</option>';
+        availableDepts.forEach(dept => {
+          deptOptions += `<option>${dept}</option>`;
+        });
+
+        document.getElementById("deptFormArea").innerHTML = `
+          <div style="font-weight:bold; margin-bottom:10px;">
+            ${editMode !== null ? `Editing Department ${allEntries[editMode].deptIndex}` : `Department ${currentDeptIndex + 1} of ${numDepts}`}
           </div>
-        </form>
-      `;
-      if (editMode !== null) {
-        const entry = allEntries[editMode];
-        document.querySelector(".dept").value = entry.dept;
-        document.querySelector(".rolls").value = entry.rollsRaw;
-        document.querySelector(".sep").value = entry.sep;
+          <form id="currentForm">
+            <label>Department:</label>
+            <select class="dept" required>
+              ${deptOptions}
+            </select>
+            <div class="warning deptWarn">Please select a department (e.g., ENGA, PHIL)</div>
+            <label>Roll Numbers (e.g. 1-50,55,60-70):</label>
+            <input type="text" class="rolls" required>
+            <div class="warning rollsWarn">Please enter valid roll numbers (e.g., 1-50,55,60-70)</div>
+            <label>Separation:</label>
+            <select class="sep" required>
+              <option disabled selected value="">-- Select Separation --</option>
+              <option>1</option><option>2</option>
+            </select>
+            <div class="warning sepWarn">Please select a valid separation (e.g., 1, 2)</div>
+            <div class="btnbar">
+              <button type="button" id="saveDept">${editMode !== null ? "Update Department" : "Save Department"}</button>
+              <button type="button" onclick="resetDeptForm()">Reset</button>
+            </div>
+          </form>
+        `;
+        if (editMode !== null) {
+          const entry = allEntries[editMode];
+          document.querySelector(".dept").value = entry.dept;
+          document.querySelector(".rolls").value = entry.rollsRaw;
+          document.querySelector(".sep").value = entry.sep;
+        }
+        document.getElementById("saveDept").onclick = () => saveDeptForm();
+      } catch (error) {
+        console.error('Error in renderDeptForm:', error);
+        alert('Error rendering form. Check console.');
       }
-      document.getElementById("saveDept").onclick = () => saveDeptForm();
-      document.getElementById("deptBackBtn").style.display = "block";
     }
 
     function resetDeptForm() {
@@ -907,7 +1030,6 @@
       document.getElementById("commonList").style.display = "none";
       document.getElementById("deptFormArea").innerHTML = "";
       document.getElementById("deptList").innerHTML = "";
-      document.getElementById("deptBackBtn").style.display = "none";
       resetCommonForm();
       alert('All data has been reset.');
     }
@@ -935,7 +1057,7 @@
         form.querySelector(".rollsWarn").style.display = "block";
         valid = false;
       }
-      if (valid && hasDuplicateRolls(rolls.value.trim(), commonData.year, editMode)) {
+      if (valid && hasDuplicateRolls(rolls.value.trim(), commonData ? commonData.year : '', editMode)) {
         rolls.classList.add("error");
         form.querySelector(".rollsWarn").textContent = "Same roll numbers are already assigned for this year";
         form.querySelector(".rollsWarn").style.display = "block";
@@ -955,7 +1077,7 @@
         dept: dept.value.trim(),
         rollsRaw: normalizeRollsRaw(rolls.value.trim()),
         sep: sep.value.trim(),
-        deptIndex: editMode !== null ? allEntries[editMode].deptIndex : (currentDeptIndex + 1)
+        deptIndex: editMode !== null ? allEntries[editMode].deptIndex : allEntries.length + 1
       };
 
       if (editMode !== null) {
@@ -967,6 +1089,9 @@
         currentDeptIndex++;
         alert(`Department ${entry.deptIndex} added successfully.`);
       }
+
+      // Update deptIndex for all entries to ensure sequential numbering
+      allEntries.forEach((e, i) => e.deptIndex = i + 1);
 
       renderDeptList();
       renderResultTable();
@@ -1024,6 +1149,7 @@
     window.removeDept = function(idx) {
       const removedDept = allEntries[idx].dept;
       allEntries.splice(idx, 1);
+      // Reassign deptIndex to maintain sequential order
       allEntries.forEach((e, i) => e.deptIndex = i + 1);
       currentDeptIndex = allEntries.length;
       renderDeptList();
@@ -1064,21 +1190,22 @@
         room: document.getElementById("commonRoom").value
       };
 
+      allEntries.length = 0;
+      numDepts = 0;
+      currentDeptIndex = 0;
+      editMode = null;
       renderCommonList();
       document.getElementById("commonContainer").style.display = "block";
       document.getElementById("commonForm").style.display = "none";
       document.getElementById("commonList").style.display = "block";
       document.getElementById("numDeptsContainer").style.display = "block";
-      document.getElementById("formsContainer").style.display = currentDeptIndex < numDepts ? "block" : "none";
-      document.getElementById("resultTable").style.display = allEntries.length ? "table" : "none";
-      document.getElementById("actionButtons").style.display = allEntries.length === numDepts && numDepts > 0 ? "block" : "none";
+      document.getElementById("formsContainer").style.display = "none";
+      document.getElementById("resultTable").style.display = "none";
+      document.getElementById("actionButtons").style.display = "none";
       alert(commonEditMode ? 'Common data updated successfully.' : 'Common data saved successfully.');
       commonEditMode = false;
       document.getElementById("saveCommon").textContent = "Save Common Data";
       document.getElementById("commonFormTitle").textContent = "Enter Common Data";
-      if (currentDeptIndex < numDepts) {
-        renderDeptForm();
-      }
     };
 
     function renderCommonList() {
@@ -1133,10 +1260,12 @@
       } else if (action === 'removeCommon') {
         message.textContent = 'Are you sure you want to remove the common data? This will also clear all department entries.';
       } else if (action === 'removeDept') {
-        const dept = allEntries[idx].dept || 'unknown';
+        const dept = allEntries[idx]?.dept || 'unknown';
         message.textContent = `Are you sure you want to remove the department ${dept}?`;
       } else if (action === 'resetAll') {
         message.textContent = 'Are you sure you want to reset all data? This action cannot be undone.';
+      } else if (action === 'backToDeptForm') {
+        message.textContent = 'Going back will discard any unsaved changes. Are you sure?';
       }
       modal.style.display = 'flex';
     }
@@ -1147,33 +1276,44 @@
     }
 
     function confirmAction() {
-      const { action, idx } = modalAction || {};
-      if (action === 'generate') {
-        generateAllotment();
-      } else if (action === 'removeCommon') {
-        commonData = null;
-        allEntries.length = 0;
-        numDepts = 0;
-        currentDeptIndex = 0;
-        editMode = null;
-        document.getElementById("commonContainer").style.display = "block";
-        document.getElementById("commonForm").style.display = "block";
-        document.getElementById("commonList").style.display = "none";
-        document.getElementById("numDeptsContainer").style.display = "none";
-        document.getElementById("formsContainer").style.display = "none";
-        document.getElementById("resultTable").style.display = "none";
-        document.getElementById("actionButtons").style.display = "none";
-        document.getElementById("deptFormArea").innerHTML = "";
-        document.getElementById("deptList").innerHTML = "";
-        document.getElementById("deptBackBtn").style.display = "none";
-        resetCommonForm();
-        alert('Common data and all department entries removed successfully.');
-      } else if (action === 'removeDept') {
-        removeDept(idx);
-      } else if (action === 'resetAll') {
-        resetAll();
+      console.log('Confirming action:', modalAction);
+      try {
+        const { action, idx } = modalAction || {};
+        if (!action) {
+          console.error('No modal action defined');
+          return;
+        }
+        if (action === 'generate') {
+          generateAllotment();
+        } else if (action === 'removeCommon') {
+          commonData = null;
+          allEntries.length = 0;
+          numDepts = 0;
+          currentDeptIndex = 0;
+          editMode = null;
+          document.getElementById("commonContainer").style.display = "block";
+          document.getElementById("commonForm").style.display = "block";
+          document.getElementById("commonList").style.display = "none";
+          document.getElementById("numDeptsContainer").style.display = "none";
+          document.getElementById("formsContainer").style.display = "none";
+          document.getElementById("resultTable").style.display = "none";
+          document.getElementById("actionButtons").style.display = "none";
+          document.getElementById("deptFormArea").innerHTML = "";
+          document.getElementById("deptList").innerHTML = "";
+          resetCommonForm();
+          alert('Common data and all department entries removed successfully.');
+        } else if (action === 'removeDept') {
+          removeDept(idx);
+        } else if (action === 'resetAll') {
+          resetAll();
+        } else if (action === 'backToDeptForm') {
+          goBackToDeptForm();
+        }
+        closeModal();
+      } catch (error) {
+        console.error('Error in confirmAction:', error);
+        alert('Error processing action. Check console.');
       }
-      closeModal();
     }
 
     function generateAllotment() {
@@ -1216,20 +1356,6 @@
         generateBtn.textContent = 'Generate Allotment';
       });
     }
-
-    // Attach reset all if needed
-    document.addEventListener('DOMContentLoaded', () => {
-      const actionButtons = document.getElementById("actionButtons");
-      if (actionButtons && !document.getElementById("resetAllBtn")) {
-        const resetAllBtn = document.createElement("button");
-        resetAllBtn.type = "button";
-        resetAllBtn.id = "resetAllBtn";
-        resetAllBtn.textContent = "Reset All";
-        resetAllBtn.className = "remove";
-        resetAllBtn.onclick = () => showConfirmModal('resetAll');
-        actionButtons.appendChild(resetAllBtn);
-      }
-    });
   </script>
 </body>
 </html>
