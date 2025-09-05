@@ -16,6 +16,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = "uploads"
 app.config['OUTPUT_FOLDER'] = "output"
 app.secret_key = "supersecret"
+RealPassword = "seating@2025"  # Our main password
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
@@ -228,7 +229,7 @@ def export_pdf(pdf_path, totalRooms):
 
 # ------------------ Routes ------------------
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/seating", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         totalRooms = {}                      # {room_id: (seat_matrix, date, subject-year list)}
@@ -282,6 +283,15 @@ def index():
 
 
     return render_template("index.html")
+@app.route("/", methods=["GET", "POST"])
+def Authentication():
+   if request.method == "POST":
+       password = request.form.get("password")
+       if password == RealPassword:
+           return redirect("/seating")
+       else:
+           return render_template("login.html", error="Invalid Password")
+   return render_template("login.html")
 
 @app.route("/download/<filename>")
 def download_file(filename):
