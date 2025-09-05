@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Page</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background:url(/Vidyamandira3.jpg);
+      position: relative;
+     
+    }
+    body::after{
+      content:"";
+      height: 100%;
+      width: 100%;
+      background-color: #383131;
+      position: absolute;
+      z-index: -1;
+      opacity:0.75;
+     
+      
+    }
+
+    .login-container {
+      background: #ffffff3d;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      backdrop-filter: blur(10px);
+    }
+
+    .login-container h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #555;
+      font-size: 0.9rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #b35100;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 0.8rem;
+       background: #c25e0c;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .login-btn:hover {
+      background: #b35100;
+    }
+
+    .forgot-password {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .forgot-password a {
+      color: #b35100;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .forgot-password a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 500px) {
+      .login-container {
+        margin: 1rem;
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2 style="color: white;">Login</h2>
+    <form action="/index.html" method="POST">
+      <div class="form-group">
+        <label style="color: white;" for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter your username" required>
+      </div>
+      <div class="form-group">
+        <label style="color: white;" for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+      </div>
+      <button type="submit" class="login-btn">Login</button>
+      
+    </form>
+  </div>
+    <script>
+    const loginBtn = document.querySelector(".login-btn");
+    loginBtn.addEventListener("click", async (event) => {
+        console.log("Login button clicked");
+        event.preventDefault(); // Prevent form submission
+
+        // Capture username and password values inside the event handler
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        console.log("Captured username:", username);
+        console.log("Captured password:", password);
+
+        try {
+            const response = await fetch('http://localhost:4000/login-btn', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            console.log("Fetch request sent");
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.error("Response not OK:", text);
+                throw new Error(`Server error: ${text}`);
+            }
+
+            const result = await response.json();
+            console.log("Response JSON parsed:", result);
+            if (result.success) {
+                console.log("Login successful:", result);
+                alert("Login successful!");
+                console.log("Redirecting to index.html");
+                // Redirect to homepage or handle success
+                window.location.href = 'index.html';
+            } else {
+                console.error("Login failed:", result.error);
+                alert("Login failed: " + result.error);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Network error or server error occurred: " + error.message);
+        }
+    });
+  </script>
+</body>
+</html>
