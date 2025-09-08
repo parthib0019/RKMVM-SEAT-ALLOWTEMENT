@@ -1336,7 +1336,7 @@
       const formData = new FormData();
       formData.append("file", blob, "input.txt");
 
-      fetch("/", {
+      fetch("/seating", {
         method: "POST",
         body: formData
       })
