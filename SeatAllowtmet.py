@@ -109,9 +109,8 @@ def room_suggestion():
 # ------------------ Database Helper ------------------
 def get_rolls_by_subject(year, subject, subject_type):
     
-    
+
     print("fetching rolls")
-    
     rolls = []
     conn = pymysql.connect(
         host="localhost", user="root", password="", database="ExamSeatAllowtment"
@@ -131,43 +130,60 @@ def get_rolls_by_subject(year, subject, subject_type):
     ws = wb.active
 
     headers = [cell.value for cell in next(ws.iter_rows(min_row=1, max_row=1))]
-    roll_idx = headers.index("Roll Number")
-    honours_idx = headers.index("Honours")
-    gen1_idx = headers.index("General1")
-    gen2_idx = headers.index("General2")
+    subj = subject.lower()
 
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        roll = row[roll_idx]
-        honours = str(row[honours_idx] or "").lower()
-        gen1 = str(row[gen1_idx] or "").lower()
-        gen2 = str(row[gen2_idx] or "").lower()
-        subj = subject.lower()
+    # ---------------- UG case ----------------
+    if "UG" in year.upper():
+        roll_idx = headers.index("Roll Number")
+        honours_idx = headers.index("Honours")
+        gen1_idx = headers.index("General1")
+        gen2_idx = headers.index("General2")
 
-        if subject_type == "major":
-            if subj in honours:
-                rolls.append(roll)
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            roll = row[roll_idx]
+            honours = str(row[honours_idx] or "").lower()
+            gen1 = str(row[gen1_idx] or "").lower()
+            gen2 = str(row[gen2_idx] or "").lower()
 
-        elif subject_type == "minor":
-            year_num = int(year.split("-")[1])  # UG-1 → 1
-            if year_num % 2 == 1:  # odd year → General1
-                if subj in gen1:
-                    rolls.append(roll)
-            else:  # even year → General2
-                if subj in gen2:
+            if subject_type == "major":
+                if subj in honours:
                     rolls.append(roll)
 
-        elif subject_type == "general":
-            year_num = int(year.split("-")[1])
-            if subj in honours:
-                rolls.append(roll)
-            if year_num % 2 == 1 and subj in gen1:
-                rolls.append(roll)
-            if year_num % 2 == 0 and subj in gen2:
+            elif subject_type == "minor":
+                year_num = int(year.split("-")[1])  # UG-1 → 1
+                if year_num % 2 == 1:  # odd year → General1
+                    if subj in gen1:
+                        rolls.append(roll)
+                else:  # even year → General2
+                    if subj in gen2:
+                        rolls.append(roll)
+
+            elif subject_type == "general":
+                year_num = int(year.split("-")[1])
+                if subj in honours:
+                    rolls.append(roll)
+                if year_num % 2 == 1 and subj in gen1:
+                    rolls.append(roll)
+                if year_num % 2 == 0 and subj in gen2:
+                    rolls.append(roll)
+
+    # ---------------- PG case ----------------
+    elif "PG" in year.upper():
+        roll_idx = headers.index("Roll No")
+        subj_idx = headers.index("Subject")
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            roll = row[roll_idx]
+            subj_val = str(row[subj_idx] or "").lower()
+            print("roll number problem")  #########################
+            print(roll, subj_val)  #########################
+            if subj in subj_val:
                 rolls.append(roll)
 
     cursor.close()
     conn.close()
     return rolls
+
 
 def get_room_info(room_id):
     try:
