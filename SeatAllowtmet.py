@@ -10,6 +10,9 @@ from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
+import pandas as pd
+from io import BytesIO
+from flask import jsonify
 
 # ------------------ Flask Setup ------------------
 app = Flask(__name__)
@@ -38,7 +41,8 @@ def parse_line(line: str):
     room_part, rest = rest.split("!", 1)
     paper_part, rest = rest.split("@", 1)
     year_part, rest = rest.split("%", 1)
-    subject_part, subject_type_part = rest.split("^", 1)
+    subject_part, rest = rest.split("^", 1)
+    subject_type_part, separetion = rest.split("$", 1) 
 
     return (
         date_part.strip(),
@@ -46,8 +50,61 @@ def parse_line(line: str):
         paper_part.strip(),
         year_part.strip(),
         subject_part.strip(),
-        subject_type_part.strip().lower()
+        subject_type_part.strip().lower(),
+        separetion.strip()
     )
+#room_suggestion
+
+@app.route("/roomSuggestion", methods=["POST"])
+def room_suggestion():
+    try:
+        data = request.get_json()
+        date = data.get("date")
+        paperName = data.get("paperName")
+        year = data.get("year")
+        subject = data.get("subject")
+        subject_type = data.get("subjectType")
+        separation = int(data.get("separation"))
+
+        # 1. Fetch student Excel from DB
+        cur = pymysql.connection.cursor()
+        cur.execute("SELECT student_data FROM StudentInfo WHERE Year=%s", (year,))
+        blob = cur.fetchone()
+        if not blob:
+            return jsonify({"error": "No student data found for this year."})
+        
+        df = pd.read_excel(BytesIO(blob[0]))
+
+        # 2. Filter students
+        if subject_type == "Major":
+            student_rolls = df[df["Honours"].str.contains(subject, case=False, na=False)]["Roll Number"]
+        elif subject_type == "Minor":
+            general_col = "General1" if int(year.split("-")[1]) % 2 != 0 else "General2"
+            student_rolls = df[df[general_col].str.contains(subject, case=False, na=False)]["Roll Number"]
+        else:  # General
+            general_col = "General1" if int(year.split("-")[1]) % 2 != 0 else "General2"
+            student_rolls = df[
+                df["Honours"].str.contains(subject, case=False, na=False) |
+                df[general_col].str.contains(subject, case=False, na=False)
+            ]["Roll Number"]
+        print(student_rolls)  #########################
+
+        total_students = len(student_rolls)
+
+        # 3. Fetch room info
+        cur.execute("SELECT RoomId, totalCapacity, BenchPerCol FROM RoomInfo")
+        rooms = cur.fetchall()
+
+        # 4. Filter suitable rooms
+        suitable_rooms = [
+            {"RoomId": r[0], "totalCapacity": r[1]} 
+            for r in rooms if r[1] >= total_students
+        ]
+
+        return jsonify({"rooms": suitable_rooms, "total_students": total_students})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 # ------------------ Database Helper ------------------
 def get_rolls_by_subject(year, subject, subject_type):
@@ -300,7 +357,7 @@ def index():
         for line in lines:
             if not line.strip():
                 continue
-            date, room, paper, year, subject, subject_type = parse_line(line)
+            date, room, paper, year, subject, subject_type, separation = parse_line(line)
             print(line)                                                                    #########################
             rolls = get_rolls_by_subject(year, SubjectDictionary[subject], subject_type)
             print(rolls)                                                                    #########################
@@ -313,8 +370,8 @@ def index():
                 print(seat_matrix)                                                           ########################
                 if not seat_matrix:
                     continue
-            seat_matrix = allocate_seats(seat_matrix, rolls, paper, year, 1, subject)
-            print(seat_matrix)                                                              #######################33333333333
+            seat_matrix = allocate_seats(seat_matrix, rolls, paper, year, separation, subject)
+            print(seat_matrix)                                                              #######################
             totalRooms[room_key] = (seat_matrix, date)
 
         pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], "All_Seating_Allotments.pdf")

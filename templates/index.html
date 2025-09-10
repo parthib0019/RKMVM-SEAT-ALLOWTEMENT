@@ -109,29 +109,17 @@
         div.innerHTML = `
           <h3>Input ${i+1}</h3>
           <label>Date:</label>
-          <input type="text" class="date${i}" placeholder="dd/mm/yyyy" readonly onclick="showCalendar(this)">
-          <label>Room Number:</label>
-          <select class="room${i}">
-            <option value="1">1</option>
-            <option value="13">13</option>
-            <option value="15">15</option>
-            <option value="16">16</option>
-            <option value="18">18</option>
-            <option value="20">20</option>
-            <option value="3A">3A</option>
-            <option value="Sister Nivedita Hall">Sister Nivedita Hall</option>
-            <option value="Tejasananda Hall">Tejasananda Hall</option>
-          </select>
+          <input type="text" class="date${i}" id="date" placeholder="dd/mm/yyyy" readonly onclick="showCalendar(this)">
           <label>Paper Name:</label>
-          <input type="text" class="paper${i}" placeholder="e.g. Physics Hons">
+          <input type="text" class="paper${i}" id="paperName" placeholder="e.g. Physics Hons">
           <label>Year:</label>
-          <select class="year${i}">
+          <select class="year${i}" id="year">
             <option value="UG-1">UG-1</option>
             <option value="UG-2">UG-2</option>
             <option value="UG-3">UG-3</option>
           </select>
           <label>Subject:</label>
-          <select class="subject${i}">
+          <select class="subject${i}" id="subject">
             <option value="PHYSA">PHYSA</option>
             <option value="CEMA">CEMA</option>
             <option value="MTMA">MTMA</option>
@@ -149,10 +137,27 @@
             <option value="POLA">POLA</option>
           </select>
           <label>Subject Type:</label>
-          <select class="stype${i}">
+          <select class="stype${i}" id="subjectType">
             <option value="Major">Major</option>
             <option value="Minor">Minor</option>
             <option value="General">General</option>
+          </select>
+          <label>Separation:</label>
+          <select class="separation${i}" id="separation">
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+          <label>Room Number:</label>
+          <select class="room${i}">
+            <option value="1">1</option>
+            <option value="13">13</option>
+            <option value="15">15</option>
+            <option value="16">16</option>
+            <option value="18">18</option>
+            <option value="20">20</option>
+            <option value="3A">3A</option>
+            <option value="Sister Nivedita Hall">Sister Nivedita Hall</option>
+            <option value="Tejasananda Hall">Tejasananda Hall</option>
           </select>
         `;
         inputsContainer.appendChild(div);
@@ -221,9 +226,10 @@
         const year = document.querySelector(`.year${i}`).value.trim();
         const subject = document.querySelector(`.subject${i}`).value.trim();
         const stype = document.querySelector(`.stype${i}`).value.trim();
+        const separation = document.querySelector(`.separation${i}`) ? document.querySelector(`.separation${i}`).value.trim() : "";
 
-        if (!date || !room || !paper || !year || !subject || !stype) continue;
-        const line = `${date}#${room}!${paper}@${year}%${subject}^${stype}`;
+        if (!date || !room || !paper || !year || !subject || !stype || !separation) continue;
+        const line = `${date}#${room}!${paper}@${year}%${subject}^${stype}$${separation}`;
         lines.push(line);
       }
 
@@ -242,6 +248,36 @@
           document.open();
           document.write(html);
           document.close();
+        })
+        .catch(err => console.error("Error:", err));
+    }
+    function getRoomSuggestions() {
+        const payload = {
+            date: document.getElementById("date").value,
+            paperName: document.getElementById("paperName").value,
+            year: document.getElementById("year").value,
+            subject: document.getElementById("subject").value,
+            subjectType: document.getElementById("subjectType").value,
+            separation: document.getElementById("separation").value
+        };
+
+        fetch("/roomSuggestion", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            const resultsDiv = document.getElementById("roomResults");
+            if (data.error) {
+                resultsDiv.innerHTML = `<p style="color:red">${data.error}</p>`;
+            } else {
+                resultsDiv.innerHTML = `<h3>Suggested Rooms:</h3><ul>` +
+                    data.rooms.map(r => `<li>Room ${r.RoomId} (Capacity: ${r.totalCapacity})</li>`).join("") +
+                    `</ul>`;
+            }
         })
         .catch(err => console.error("Error:", err));
     }
