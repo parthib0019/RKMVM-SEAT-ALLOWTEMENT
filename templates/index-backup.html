@@ -89,13 +89,8 @@
         div.classList.add("form-section");
         div.innerHTML = `
           <h3>Input ${i+1}</h3>
-          <label>Department:</label>
-          <select class="dept${i}">
-            <option value="ENGA">ENGA</option>
-            <option value="PHIL">PHIL</option>
-            <option value="MATH">MATH</option>
-            <option value="COMS">COMS</option>
-          </select>
+          <label>Paper Name (Department Short Form):</label>
+          <input type="text" class="paper${i}" placeholder="e.g. PHYSA">
 
           <label>Year:</label>
           <select class="year${i}">
@@ -104,8 +99,25 @@
             <option value="UG-3">UG-3</option>
           </select>
 
-          <label>Roll Range:</label>
-          <input type="text" class="rolls${i}" placeholder="e.g. 1-50,55,60-70">
+          <label>Departments (Select one or more):</label>
+          <select class="depts${i}" multiple size="6">
+            <option value="PHYSA">Physics</option>
+            <option value="CEMA">Chemistry</option>
+            <option value="MTMA">Mathematics</option>
+            <option value="ZOOA">Zoology</option>
+            <option value="CSMA">Computer Science</option>
+            <option value="MCBA">Microbiology</option>
+            <option value="INCA">Industrial Chemistry</option>
+            <option value="ACEM">Applied Chemistry</option>
+            <option value="ECOA">Economics</option>
+            <option value="ENGA">English</option>
+            <option value="HISA">History</option>
+            <option value="PHILA">Philosophy</option>
+            <option value="POLA">Political Science</option>
+            <option value="SANS">Sanskrit</option>
+            <option value="BENGA">Bengali</option>
+          </select>
+          <small style="color: #555;">Hold Ctrl (Windows/Linux) or Cmd (Mac) to select multiple.</small>
 
           <label>Date:</label>
           <input type="text" class="date${i}" placeholder="Select Date" readonly onclick="showCalendar(this)">
@@ -135,18 +147,20 @@
       let lines = [];
 
       for (let i=0; i<n; i++) {
-        const dept = document.querySelector(`.dept${i}`).value.trim();
+        const paper = document.querySelector(`.paper${i}`).value.trim();
         const year = document.querySelector(`.year${i}`).value.trim();
-        const rolls = document.querySelector(`.rolls${i}`).value.trim();
+        const deptSelect = document.querySelector(`.depts${i}`);
+        const selectedDepts = Array.from(deptSelect.selectedOptions).map(opt => opt.value).join(",");
         const date = document.querySelector(`.date${i}`).value.trim();
         const room = document.querySelector(`.room${i}`).value.trim();
         const sep = document.querySelector(`.sep${i}`).value.trim();
 
-        if (!dept || !year || !rolls || !date || !room || !sep) {
+        if (!paper || !year || !selectedDepts || !date || !room || !sep) {
           continue;  // skip incomplete
         }
 
-        const line = `${dept}#${year}$${rolls}!${date}@${room}%${sep}`;
+        // Format: paper#year$departments!date@room%sep
+        const line = `${paper}#${year}$${selectedDepts}!${date}@${room}%${sep}`;
         lines.push(line);
       }
 
@@ -161,7 +175,7 @@
       formData.append("file", blob, "input.txt");
 
       // Send to Flask
-      fetch("/", {
+      fetch("/seating", {
           method: "POST",
           body: formData
       })

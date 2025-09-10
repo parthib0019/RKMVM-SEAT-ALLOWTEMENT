@@ -1,27 +1,117 @@
 import os
-import pymysql
-from flask import Flask, request, render_template, send_from_directory, redirect, url_for, flash
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
-from werkzeug.utils import secure_filename
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.pagesizes import A4
-import numpy as np
-from itertools import zip_longest
+import io
 import random as rnd
+import pymysql
+import openpyxl
+from flask import Flask, request, redirect, flash, render_template, send_from_directory
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
 
-# ------------------ Flask Config ------------------
+# ------------------ Flask Setup ------------------
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = "uploads"
-app.config['OUTPUT_FOLDER'] = "output"
-app.secret_key = "supersecret"
-RealPassword = "seating@2025"  # Our main password
+app.secret_key = "secret"
 
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+OUTPUT_FOLDER = os.path.join(BASE_DIR, "output")
 
-# ------------------ Database ------------------
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["OUTPUT_FOLDER"] = OUTPUT_FOLDER
+
+# ------------------ Input Parsing ------------------
+def parse_line(line: str):
+    """
+    Format: Date#RoomNumber!paperName@year%Subject^SubjectType
+    Returns: (date_str, room_str, paper, year_str, subject, subject_type)
+    """
+    if not line or "#" not in line or "!" not in line or "@" not in line or "%" not in line or "^" not in line:
+        raise ValueError(f"Bad line format: {line}")
+
+    date_part, rest = line.split("#", 1)
+    room_part, rest = rest.split("!", 1)
+    paper_part, rest = rest.split("@", 1)
+    year_part, rest = rest.split("%", 1)
+    subject_part, subject_type_part = rest.split("^", 1)
+
+    return (
+        date_part.strip(),
+        room_part.strip(),
+        paper_part.strip(),
+        year_part.strip(),
+        subject_part.strip(),
+        subject_type_part.strip().lower()
+    )
+
+# ------------------ Database Helper ------------------
+def get_rolls_by_subject(year, subject, subject_type):
+    
+    
+    print("fetching rolls")
+    
+    rolls = []
+    conn = pymysql.connect(
+        host="localhost", user="root", password="", database="ExamSeatAllowtment"
+    )
+    cursor = conn.cursor()
+
+    query = f"SELECT student_data FROM StudentInfo WHERE Year LIKE '%{year}%'"
+    cursor.execute(query)
+    result = cursor.fetchone()
+    if not result:
+        cursor.close()
+        conn.close()
+        return rolls
+
+    excel_blob = result[0]
+    wb = openpyxl.load_workbook(io.BytesIO(excel_blob))
+    ws = wb.active
+
+    headers = [cell.value for cell in next(ws.iter_rows(min_row=1, max_row=1))]
+    roll_idx = headers.index("Roll Number")
+    honours_idx = headers.index("Honours")
+    gen1_idx = headers.index("General1")
+    gen2_idx = headers.index("General2")
+
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        roll = row[roll_idx]
+        honours = str(row[honours_idx] or "").lower()
+        gen1 = str(row[gen1_idx] or "").lower()
+        gen2 = str(row[gen2_idx] or "").lower()
+        subj = subject.lower()
+
+        if subject_type == "major":
+            if subj in honours:
+                rolls.append(roll)
+
+        elif subject_type == "minor":
+            year_num = int(year.split("-")[1])  # UG-1 → 1
+            if year_num % 2 == 1:  # odd year → General1
+                if subj in gen1:
+                    rolls.append(roll)
+            else:  # even year → General2
+                if subj in gen2:
+                    rolls.append(roll)
+
+        elif subject_type == "general":
+            year_num = int(year.split("-")[1])
+            if subj in honours:
+                rolls.append(roll)
+            if year_num % 2 == 1 and subj in gen1:
+                rolls.append(roll)
+            if year_num % 2 == 0 and subj in gen2:
+                rolls.append(roll)
+
+    cursor.close()
+    conn.close()
+    return rolls
+
 def get_room_info(room_id):
     try:
         # Connect to MySQL
@@ -63,31 +153,9 @@ def get_room_info(room_id):
     except pymysql.Error as err:
         print(f"Error: {err}")
 
-
-# ------------------ Parsing ------------------
-def parse_line(line: str):
-    subj_year_rolls, date_room = line.split("!")
-    subj_year, roll_ranges = subj_year_rolls.split("$")
-    subject, year = subj_year.split("#")
-    roll_range, date, rooms = roll_ranges, *date_room.split("@")
-    room, separation = rooms.split("%")
-    return subject.strip(), year.strip(), roll_range.strip(), date.strip(), room.strip(), separation.strip()
-
-def expand_rolls(roll_text: str):
-    rolls = []
-    parts = roll_text.split(",")
-    for part in parts:
-        if "-" in part:
-            start, end = map(int, part.split("-"))
-            rolls.extend(range(start, end+1))
-        else:
-            rolls.append(int(part))
-    return rolls
-
-# ------------------ Allocation ------------------
-def can_place(seat_matrix, c, r, dept, Separation):
-    #print(f"Checking placement at ({c}, {r}) for dept {dept}")
-    separation = int(Separation)
+# ------------------ Allocation Helpers ------------------
+def can_place(seat_matrix, c, r, paper, sep):
+    separation = int(sep)
     for dc in range(-1*separation, separation):
         for dr in range(-1*separation, separation):
             if dc == 0 and dr == 0:
@@ -97,13 +165,11 @@ def can_place(seat_matrix, c, r, dept, Separation):
             if 0 <= cc < len(seat_matrix) and 0 <= rr < len(seat_matrix[cc]):
                 neighbor = seat_matrix[cc][rr]
                 #print(f"Neighbor at ({cc}, {rr}): {neighbor}")
-                if neighbor != "e" and neighbor[1] == dept:
+                if neighbor != "e" and neighbor[1] == paper:
                     return False    
     return True
 
-
-
-def allocate_seats(seat_matrix, rolls, dept, year, separation):
+def allocate_seats(seat_matrix, rolls, paper, year, sep, subject):
     if not seat_matrix:
         return seat_matrix
 
@@ -115,23 +181,12 @@ def allocate_seats(seat_matrix, rolls, dept, year, separation):
                 seat_matrix.reverse()
                 return seat_matrix
 
-            if seat_matrix[c][r] == "e" and can_place(seat_matrix, c, r, dept, separation):
+            if seat_matrix[c][r] == "e" and can_place(seat_matrix, c, r, paper, sep):
                 roll = rolls.pop(0)            # assign one roll only
-                seat_matrix[c][r] = (roll, dept, year)
+                seat_matrix[c][r] = (roll, paper, year, subject)
     return seat_matrix
 
-
-
-
 # ------------------ PDF Export ------------------
-
-def rotate_for_pdf(seat_matrix):
-    """
-    Convert column-based seat_matrix (jagged lists) into row-based matrix for PDF.
-    """
-    rotated = list(zip_longest(*seat_matrix, fillvalue="e"))
-    return [list(row) for row in rotated]
-
 def export_pdf(pdf_path, totalRooms):
     """
     totalRooms = {
@@ -177,8 +232,8 @@ def export_pdf(pdf_path, totalRooms):
                     elif seat is None:  # no seat at all
                         row_data.append(None)
                     else:  # filled seat
-                        roll, dept, yr = seat
-                        row_data.append(f"{roll}\n{dept}-{yr}")
+                        roll, paper, yr, subject = seat
+                        row_data.append(f"{roll}\n{subject}-{yr}")
                 else:
                     row_data.append(None)
             data.append(row_data)
@@ -224,76 +279,49 @@ def export_pdf(pdf_path, totalRooms):
 
     doc.build(elements)
 
-
-
-
 # ------------------ Routes ------------------
-
-@app.route("/seating", methods=["GET", "POST"])
+@app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        totalRooms = {}                      # {room_id: (seat_matrix, date, subject-year list)}
+        SubjectDictionary = {"PHYSA": "Physics", "CHMA": "Chemistry", "MTMA": "Mathematics","ZOOA": "Zoology","HISA": "History", "ENGA": "English", "BNGA": "Bengali", "SNSA": "Sanskrit", "PHIL": "Philosophy", "COMS": "Computer Science", "ECOA": "Economics", "POLA": "Political Science"}
+        totalRooms = {}
         file = request.files.get("file")
         if not file:
             flash("No file uploaded")
             return redirect(request.url)
-        
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
         file.save(filepath)
 
         with open(filepath, "r") as f:
             lines = f.read().splitlines()
-            print(lines)
 
         rnd.shuffle(lines)
-        pdf_files = []
         for line in lines:
             if not line.strip():
                 continue
-            print(f"Processing line: {line}")
-            subject, year, roll_range, date, room, Separation = parse_line(line)
-            rolls = expand_rolls(roll_range)
-            room_key = f"{room}_{date.replace('/', '-')}"   # unique key per room per date
+            date, room, paper, year, subject, subject_type = parse_line(line)
+            print(line)                                                                    #########################
+            rolls = get_rolls_by_subject(year, SubjectDictionary[subject], subject_type)
+            print(rolls)                                                                    #########################
+            room_key = f"{room}_{date.replace('/', '-')}"
 
             if room_key in totalRooms:
-                # Same room on same date → fetch old matrix and update
                 seat_matrix = totalRooms[room_key][0]
-                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year, Separation)
-                totalRooms[room_key] = (seat_matrix, date)
-
             else:
-                # Either new room OR same room but different date → fresh start
                 seat_matrix = get_room_info(room)
+                print(seat_matrix)                                                           ########################
                 if not seat_matrix:
-                    print(f"⚠️ No room info found for Room {room}")
                     continue
-                seat_matrix = allocate_seats(seat_matrix, rolls, subject, year, Separation)
-                totalRooms[room_key] = (seat_matrix, date)
+            seat_matrix = allocate_seats(seat_matrix, rolls, paper, year, 1, subject)
+            print(seat_matrix)                                                              #######################33333333333
+            totalRooms[room_key] = (seat_matrix, date)
 
-
-        print(totalRooms)
-        # After filling totalRooms
         pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], "All_Seating_Allotments.pdf")
         export_pdf(pdf_path, totalRooms)
-        pdf_files = ["All_Seating_Allotments.pdf"]
-
-
-        return render_template("pdf-viewer.html", pdf_files=pdf_files)
-
+        return render_template("pdf-viewer.html", pdf_files=["All_Seating_Allotments.pdf"])
 
     return render_template("index.html")
-
-
-@app.route("/", methods=["GET", "POST"])
-def Authentication():
-   if request.method == "POST":
-       password = request.form.get("password")
-       if password == RealPassword:
-           return redirect("/seating")
-       else:
-           return render_template("login.html", error="Invalid Password")
-   return render_template("login.html")
 
 @app.route("/download/<filename>")
 def download_file(filename):
