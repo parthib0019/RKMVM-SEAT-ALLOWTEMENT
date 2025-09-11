@@ -87,7 +87,6 @@ def room_suggestion():
                 df["Honours"].str.contains(subject, case=False, na=False) |
                 df[general_col].str.contains(subject, case=False, na=False)
             ]["Roll Number"]
-        print(student_rolls)  #########################
 
         total_students = len(student_rolls)
 
@@ -175,8 +174,6 @@ def get_rolls_by_subject(year, subject, subject_type):
         for row in ws.iter_rows(min_row=2, values_only=True):
             roll = row[roll_idx]
             subj_val = str(row[subj_idx] or "").lower()
-            print("roll number problem")  #########################
-            print(roll, subj_val)  #########################
             if subj in subj_val:
                 rolls.append(roll)
 
@@ -275,6 +272,7 @@ def export_pdf(pdf_path, totalRooms):
     SEAT_WIDTH = 80   # ~ 11 characters
     GUTTER_WIDTH = 15 # ~ 1 character
     ROW_HEIGHT = 25
+    ROW_NUM_WIDTH = 25  # width for row number column
 
     for room, (seat_matrix, date) in totalRooms.items():
         # --- Header ---
@@ -293,6 +291,10 @@ def export_pdf(pdf_path, totalRooms):
 
         for r in range(max_rows):
             row_data = []
+
+            # Add row number in first column
+            row_data.append(str(r + 1))
+
             for c in range(len(seat_matrix)):
                 # Insert gutter after every 2 seat-columns
                 if c > 0 and c % 2 == 0:
@@ -311,11 +313,10 @@ def export_pdf(pdf_path, totalRooms):
                     row_data.append(None)
             data.append(row_data)
 
-        # --- Create custom colWidths ---
+        # --- Create custom colWidths (add row number col first) ---
         num_cols = len(data[0])
-        colWidths = []
-        for c in range(num_cols):
-            # If this column is gutter
+        colWidths = [ROW_NUM_WIDTH]  # first column for row numbers
+        for c in range(1, num_cols):
             if all(row[c] == "   " or row[c] is None for row in data):
                 colWidths.append(GUTTER_WIDTH)
             else:
@@ -329,7 +330,9 @@ def export_pdf(pdf_path, totalRooms):
 
         for r, row in enumerate(data):
             for c, cell in enumerate(row):
-                if cell is None:  # no seat → no border
+                if c == 0:  # row number column → always bordered
+                    style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
+                elif cell is None:  # no seat → no border
                     style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
                 elif cell == "   ":  # gutter → no border
                     style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
@@ -337,7 +340,7 @@ def export_pdf(pdf_path, totalRooms):
                     style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
 
         # Merge gutters
-        for c in range(num_cols):
+        for c in range(1, num_cols):
             if all(row[c] == "   " for row in data):
                 style_commands.append(("SPAN", (c, 0), (c, len(data)-1)))
                 style_commands.append(("BOX", (c, 0), (c, len(data)-1), 0, colors.white))
@@ -352,11 +355,12 @@ def export_pdf(pdf_path, totalRooms):
 
     doc.build(elements)
 
+
 # ------------------ Routes ------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        SubjectDictionary = {"PHYSA": "Physics", "CHMA": "Chemistry", "MTMA": "Mathematics","ZOOA": "Zoology","HISA": "History", "ENGA": "English", "BNGA": "Bengali", "SNSA": "Sanskrit", "PHIL": "Philosophy", "COMS": "Computer Science", "ECOA": "Economics", "POLA": "Political Science"}
+        SubjectDictionary = {"PHYSA": "Physics", "CHMA": "Chemistry", "MTMA": "Mathematics","ZOOA": "Zoology","HISA": "History", "ENGA": "English", "BNGA": "Bengali", "SNSA": "Sanskrit", "PHILA": "Philosophy", "COMS": "Computer", "ECOA": "Economics", "POLA": "Political Science", "ACEM":"Applied Chemistry"}
         totalRooms = {}
         file = request.files.get("file")
         if not file:
