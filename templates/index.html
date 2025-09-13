@@ -71,6 +71,39 @@
       background: #007BFF;
       color: #fff;
     }
+    .multi-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+      max-width: 220px;
+    }
+
+    .multi-select .selected-rooms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .tag {
+      background: #007BFF;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .tag .remove {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
   </style>
 </head>
 <body>
@@ -94,195 +127,252 @@
 
   <script>
     const inputsContainer = document.getElementById("inputsContainer");
-    const calendar = document.getElementById("calendar");
-    let activeInput = null;
-    let currentDate = new Date();
-    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const dayNames = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+const calendar = document.getElementById("calendar");
+let activeInput = null;
+let currentDate = new Date();
+const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const dayNames = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
-    function generateForms() {
-      inputsContainer.innerHTML = "";
-      const n = document.getElementById("numInputs").value;
-      for (let i=0; i<n; i++) {
-        const div = document.createElement("div");
-        div.classList.add("form-section");
-        div.innerHTML = `
-          <h3>Input ${i+1}</h3>
-          <label>Date:</label>
-          <input type="text" class="date${i}" id="date" placeholder="dd/mm/yyyy" readonly onclick="showCalendar(this)">
-          <label>Paper Name:</label>
-          <input type="text" class="paper${i}" id="paperName" placeholder="enter the name of the paper">
-          <label>Year:</label>
-          <select class="year${i}" id="year">
-            <option value="UG-1">UG-1</option>
-            <option value="UG-2">UG-2</option>
-            <option value="UG-3">UG-3</option>
-            <option value="PG-1">PG-1</option>
-            <option value="PG-2">PG-2</option>
-          </select>
-          <label>Subject:</label>
-          <select class="subject${i}" id="subject">
-            <option value="PHYSA">PHYSA</option>
-            <option value="CHMA">CHMA</option>
-            <option value="MTMA">MTMA</option>
-            <option value="MCBA">MCBA</option>
-            <option value="COMS">CMSA</option>
-            <option value="INCA">INCA</option>
-            <option value="ACEM">ACEM</option>
-            <option value="ECOA">ECOA</option>
-            <option value="ZOOA">ZOOA</option>
-            <option value="BNGA">BNGA</option>
-            <option value="ENGA">ENGA</option>
-            <option value="SNSA">SNSA</option>
-            <option value="HISA">HISA</option>
-            <option value="PHILA">PHILA</option>
-            <option value="POLA">POLA</option>
-          </select>
-          <label>Subject Type:</label>
-          <select class="stype${i}" id="subjectType">
-            <option value="Major">Major</option>
-            <option value="Minor">Minor</option>
-            <option value="General">General</option>
-          </select>
-          <label>Separation:</label>
-          <select class="separation${i}" id="separation">
-            <option value="1">1</option>
-            <option value="2">2</option>
-          </select>
-          <label>Room Number:</label>
-          <select class="room${i}">
-            <option value="1">1</option>
-            <option value="13">13</option>
-            <option value="15">15</option>
-            <option value="16">16</option>
-            <option value="18">18</option>
-            <option value="20">20</option>
-            <option value="3A">3A</option>
-            <option value="Sister Nivedita Hall">Sister Nivedita Hall</option>
-            <option value="Tejasananda Hall">Tejasananda Hall</option>
-          </select>
-        `;
-        inputsContainer.appendChild(div);
-      }
+// ---------------- Multi-select for Rooms ----------------
+function setupMultiSelect(containerId) {
+  const container = document.getElementById(containerId);
+  const select = container.querySelector(".room-options");
+  const selectedContainer = container.querySelector(".selected-rooms");
+
+  select.addEventListener("change", () => {
+    const value = select.value;
+    if (!value) return;
+
+    // Avoid duplicates
+    if (selectedContainer.querySelector(`[data-value="${value}"]`)) {
+      select.value = "";
+      return;
     }
 
-    function showCalendar(input) {
-      activeInput = input;
-      renderCalendar(currentDate);
-      const rect = input.getBoundingClientRect();
-      calendar.style.top = (window.scrollY + rect.bottom + 5) + "px";
-      calendar.style.left = (rect.left) + "px";
-      calendar.style.display = "block";
-    }
+    const tag = document.createElement("div");
+    tag.classList.add("tag");
+    tag.setAttribute("data-value", value);
+    tag.innerHTML = `${value} <span class="remove">❌</span>`;
+    selectedContainer.appendChild(tag);
 
-    function renderCalendar(date) {
-      calendar.innerHTML = "";
-      const month = date.getMonth(), year = date.getFullYear();
-      const header = document.createElement("div");
-      header.classList.add("calendar-header");
-      header.innerHTML = `<button id="prev">&#9664;</button><span>${monthNames[month]} ${year}</span><button id="next">&#9654;</button>`;
-      calendar.appendChild(header);
-
-      const daysRow = document.createElement("div");
-      daysRow.classList.add("days");
-      dayNames.forEach(d => {
-        const cell = document.createElement("div");
-        cell.innerHTML = "<b>"+d+"</b>";
-        daysRow.appendChild(cell);
-      });
-      calendar.appendChild(daysRow);
-
-      const firstDay = new Date(year, month, 1).getDay();
-      const lastDate = new Date(year, month+1, 0).getDate();
-      const daysGrid = document.createElement("div");
-      daysGrid.classList.add("days");
-      for (let i=0;i<firstDay;i++) daysGrid.appendChild(document.createElement("div"));
-      for (let d=1; d<=lastDate; d++) {
-        const day = document.createElement("div");
-        day.classList.add("day");
-        day.textContent = d;
-        day.onclick = () => {
-          activeInput.value = `${d}/${month+1}/${year}`;
-          calendar.style.display = "none";
-        };
-        daysGrid.appendChild(day);
-      }
-      calendar.appendChild(daysGrid);
-      document.getElementById("prev").onclick = () => { currentDate = new Date(year, month-1, 1); renderCalendar(currentDate); };
-      document.getElementById("next").onclick = () => { currentDate = new Date(year, month+1, 1); renderCalendar(currentDate); };
-    }
-
-    document.addEventListener("click", (e) => {
-      if (!calendar.contains(e.target) && e.target !== activeInput) {
-        calendar.style.display = "none";
-      }
+    // Remove handler
+    tag.querySelector(".remove").addEventListener("click", () => {
+      tag.remove();
     });
 
-    function submitData() {
-      const n = document.getElementById("numInputs").value;
-      let lines = [];
-      for (let i=0; i<n; i++) {
-        const date = document.querySelector(`.date${i}`).value.trim();
-        const room = document.querySelector(`.room${i}`).value.trim();
-        const paper = document.querySelector(`.paper${i}`).value.trim();
-        const year = document.querySelector(`.year${i}`).value.trim();
-        const subject = document.querySelector(`.subject${i}`).value.trim();
-        const stype = document.querySelector(`.stype${i}`).value.trim();
-        const separation = document.querySelector(`.separation${i}`) ? document.querySelector(`.separation${i}`).value.trim() : "";
+    select.value = ""; // reset dropdown
+  });
+}
 
-        if (!date || !room || !paper || !year || !subject || !stype || !separation) continue;
-        const line = `${date}#${room}!${paper}@${year}%${subject}^${stype}$${separation}`;
-        lines.push(line);
-      }
+// ---------------- Dynamic Form Generation ----------------
+function generateForms() {
+  inputsContainer.innerHTML = "";
+  const n = document.getElementById("numInputs").value;
 
-      if (lines.length === 0) {
-        alert("No valid inputs found.");
-        return;
-      }
+  for (let i = 0; i < n; i++) {
+    const div = document.createElement("div");
+    div.classList.add("form-section");
+    div.innerHTML = `
+      <h3>Input ${i + 1}</h3>
+      <label>Date:</label>
+      <input type="text" class="date${i}" placeholder="dd/mm/yyyy" readonly onclick="showCalendar(this)">
+      <label>Paper Name:</label>
+      <input type="text" class="paper${i}" placeholder="enter the name of the paper">
+      <label>Year:</label>
+      <select class="year${i}">
+        <option value="UG-1">UG-1</option>
+        <option value="UG-2">UG-2</option>
+        <option value="UG-3">UG-3</option>
+        <option value="PG-1">PG-1</option>
+        <option value="PG-2">PG-2</option>
+      </select>
+      <label>Subject:</label>
+      <select class="subject${i}">
+        <option value="PHYSA">PHYSA</option>
+        <option value="CHMA">CHMA</option>
+        <option value="MTMA">MTMA</option>
+        <option value="MCBA">MCBA</option>
+        <option value="COMS">COMS</option>
+        <option value="INCA">INCA</option>
+        <option value="ACEM">ACEM</option>
+        <option value="ECOA">ECOA</option>
+        <option value="ZOOA">ZOOA</option>
+        <option value="BNGA">BNGA</option>
+        <option value="ENGA">ENGA</option>
+        <option value="SNSA">SNSA</option>
+        <option value="HISA">HISA</option>
+        <option value="PHILA">PHILA</option>
+        <option value="POLA">POLA</option>
+      </select>
+      <label>Subject Type:</label>
+      <select class="stype${i}">
+        <option value="Major">Major</option>
+        <option value="Minor">Minor</option>
+        <option value="General">General</option>
+      </select>
+      <label>Separation:</label>
+      <select class="separation${i}">
+        <option value="1">1</option>
+        <option value="2">2</option>
+      </select>
+      <span class="studentCount${i}" style="margin-left:10px; color:#007BFF;"></span>
+      <label>Room Number(s):</label>
+      <div class="multi-select" id="roomSelect${i}">
+        <div class="selected-rooms"></div>
+        <select class="room-options">
+          <option value="">--Select Room--</option>
+          <option value="1">1</option>
+          <option value="Sister Nivedita Hall">Sister Nivedita Hall</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+    `;
+    inputsContainer.appendChild(div);
 
-      const blob = new Blob([lines.join("\n")], { type: "text/plain" });
-      const formData = new FormData();
-      formData.append("file", blob, "input.txt");
+    // Setup multi-select
+    setupMultiSelect(`roomSelect${i}`);
 
-      fetch("/", { method: "POST", body: formData })
-        .then(response => response.text())
-        .then(html => {
-          document.open();
-          document.write(html);
-          document.close();
-        })
-        .catch(err => console.error("Error:", err));
+    // References
+    const yearSel = div.querySelector(`.year${i}`);
+    const subjectSel = div.querySelector(`.subject${i}`);
+    const stypeSel = div.querySelector(`.stype${i}`);
+    const separationSel = div.querySelector(`.separation${i}`);
+    const paperInput = div.querySelector(`.paper${i}`);
+    const dateInput = div.querySelector(`.date${i}`);
+    const studentCountSpan = div.querySelector(`.studentCount${i}`);
+
+    function fetchRoomSuggestions() {
+      const payload = {
+        date: dateInput.value,
+        paperName: paperInput.value,
+        year: yearSel.value,
+        subject: subjectSel.value,
+        subjectType: stypeSel.value,
+        separation: separationSel.value
+      };
+      fetch("/roomSuggestion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.total_students !== undefined) {
+          studentCountSpan.textContent = `Total Students: ${data.total_students}`;
+        } else {
+          studentCountSpan.textContent = data.error ? data.error : "";
+        }
+      })
+      .catch(() => {
+        studentCountSpan.textContent = "Error fetching data";
+      });
     }
-    function getRoomSuggestions() {
-        const payload = {
-            date: document.getElementById("date").value,
-            paperName: document.getElementById("paperName").value,
-            year: document.getElementById("year").value,
-            subject: document.getElementById("subject").value,
-            subjectType: document.getElementById("subjectType").value,
-            separation: document.getElementById("separation").value
-        };
 
-        fetch("/roomSuggestion", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(data => {
-            const resultsDiv = document.getElementById("roomResults");
-            if (data.error) {
-                resultsDiv.innerHTML = `<p style="color:red">${data.error}</p>`;
-            } else {
-                resultsDiv.innerHTML = `<h3>Suggested Rooms:</h3><ul>` +
-                    data.rooms.map(r => `<li>Room ${r.RoomId} (Capacity: ${r.totalCapacity})</li>`).join("") +
-                    `</ul>`;
-            }
-        })
-        .catch(err => console.error("Error:", err));
-    }
+    yearSel.addEventListener("change", fetchRoomSuggestions);
+    subjectSel.addEventListener("change", fetchRoomSuggestions);
+    stypeSel.addEventListener("change", fetchRoomSuggestions);
+    separationSel.addEventListener("change", fetchRoomSuggestions);
+    paperInput.addEventListener("blur", fetchRoomSuggestions);
+    dateInput.addEventListener("blur", fetchRoomSuggestions);
+  }
+}
+
+// ---------------- Calendar ----------------
+function showCalendar(input) {
+  activeInput = input;
+  renderCalendar(currentDate);
+  const rect = input.getBoundingClientRect();
+  calendar.style.top = (window.scrollY + rect.bottom + 5) + "px";
+  calendar.style.left = (rect.left) + "px";
+  calendar.style.display = "block";
+}
+
+function renderCalendar(date) {
+  calendar.innerHTML = "";
+  const month = date.getMonth(), year = date.getFullYear();
+
+  const header = document.createElement("div");
+  header.classList.add("calendar-header");
+  header.innerHTML = `<button id="prev">&#9664;</button><span>${monthNames[month]} ${year}</span><button id="next">&#9654;</button>`;
+  calendar.appendChild(header);
+
+  const daysRow = document.createElement("div");
+  daysRow.classList.add("days");
+  dayNames.forEach(d => {
+    const cell = document.createElement("div");
+    cell.innerHTML = "<b>"+d+"</b>";
+    daysRow.appendChild(cell);
+  });
+  calendar.appendChild(daysRow);
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month+1, 0).getDate();
+  const daysGrid = document.createElement("div");
+  daysGrid.classList.add("days");
+  for (let i=0;i<firstDay;i++) daysGrid.appendChild(document.createElement("div"));
+  for (let d=1; d<=lastDate; d++) {
+    const day = document.createElement("div");
+    day.classList.add("day");
+    day.textContent = d;
+    day.onclick = () => {
+      activeInput.value = `${d}/${month+1}/${year}`;
+      calendar.style.display = "none";
+    };
+    daysGrid.appendChild(day);
+  }
+  calendar.appendChild(daysGrid);
+  document.getElementById("prev").onclick = () => { currentDate = new Date(year, month-1, 1); renderCalendar(currentDate); };
+  document.getElementById("next").onclick = () => { currentDate = new Date(year, month+1, 1); renderCalendar(currentDate); };
+}
+
+document.addEventListener("click", (e) => {
+  if (!calendar.contains(e.target) && e.target !== activeInput) {
+    calendar.style.display = "none";
+  }
+});
+
+// ---------------- Submit ----------------
+function submitData() {
+  const n = document.getElementById("numInputs").value;
+  let lines = [];
+
+  for (let i=0; i<n; i++) {
+    const date = document.querySelector(`.date${i}`).value.trim();
+    const paper = document.querySelector(`.paper${i}`).value.trim();
+    const year = document.querySelector(`.year${i}`).value.trim();
+    const subject = document.querySelector(`.subject${i}`).value.trim();
+    const stype = document.querySelector(`.stype${i}`).value.trim();
+    const separation = document.querySelector(`.separation${i}`).value.trim();
+
+    // collect multi-rooms
+    const roomTags = document.querySelectorAll(`#roomSelect${i} .tag`);
+    const rooms = Array.from(roomTags).map(tag => tag.getAttribute("data-value")).join(",");
+
+    if (!date || !rooms || !paper || !year || !subject || !stype || !separation) continue;
+    const line = `${date}#${rooms}!${paper}@${year}%${subject}^${stype}$${separation}`;
+    lines.push(line);
+  }
+
+  if (lines.length === 0) {
+    alert("No valid inputs found.");
+    return;
+  }
+
+  const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+  const formData = new FormData();
+  formData.append("file", blob, "input.txt");
+
+  fetch("/", { method: "POST", body: formData })
+    .then(response => response.text())
+    .then(html => {
+      document.open();
+      document.write(html);
+      document.close();
+    })
+    .catch(err => console.error("Error:", err));
+}
+
   </script>
 </body>
 </html>

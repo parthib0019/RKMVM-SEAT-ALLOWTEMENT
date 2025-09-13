@@ -59,49 +59,75 @@ def parse_line(line: str):
 def room_suggestion():
     try:
         data = request.get_json()
-        date = data.get("date")
-        paperName = data.get("paperName")
-        year = data.get("year")
-        subject = data.get("subject")
-        subject_type = data.get("subjectType")
-        separation = int(data.get("separation"))
+        year = data.get("year", "")
+        subject = data.get("subject", "")
+        subject_type = data.get("subjectType", "")
 
-        # 1. Fetch student Excel from DB
-        cur = pymysql.connection.cursor()
-        cur.execute("SELECT student_data FROM StudentInfo WHERE Year=%s", (year,))
+        SubjectDictionary = {
+            "PHYSA": "Physics", "CHMA": "Chemistry", "MTMA": "Mathematics",
+            "ZOOA": "Zoology", "HISA": "History", "ENGA": "English",
+            "BNGA": "Bengali", "SNSA": "Sanskrit", "PHILA": "Philosophy",
+            "COMS": "Computer", "ECOA": "Economics", "POLA": "Political Science",
+            "ACEM": "Applied Chemistry", "MCBA": "Microbiology", "INCA": "Industrial Chemistry"
+        }
+
+        conn = pymysql.connect(
+            host="localhost", user="root", password="", database="ExamSeatAllowtment"
+        )
+        cur = conn.cursor()
+        cur.execute("SELECT student_data FROM StudentInfo WHERE Year LIKE %s", (f"%{year}%",))
         blob = cur.fetchone()
         if not blob:
+            cur.close()
+            conn.close()
             return jsonify({"error": "No student data found for this year."})
-        
+
         df = pd.read_excel(BytesIO(blob[0]))
 
-        # 2. Filter students
-        if subject_type == "Major":
-            student_rolls = df[df["Honours"].str.contains(subject, case=False, na=False)]["Roll Number"]
-        elif subject_type == "Minor":
-            general_col = "General1" if int(year.split("-")[1]) % 2 != 0 else "General2"
-            student_rolls = df[df[general_col].str.contains(subject, case=False, na=False)]["Roll Number"]
+        subj_full = SubjectDictionary.get(subject, subject)
+        rolls = []
+        
+        if "PG" in year.upper():
+            rolls = df[df["Subject"].str.contains(subj_full, case=False, na=False)]["Roll No"].tolist()
+        elif subject_type.lower() == "major":
+            rolls = df[df["Honours"].str.contains(subj_full, case=False, na=False)]["Roll Number"].tolist()
+        elif subject_type.lower() == "minor":
+            year_num = int(year.split("-")[1]) if "-" in year else 1
+            general_col = "General1" if year_num % 2 != 0 else "General2"
+            rolls = df[df[general_col].str.contains(subj_full, case=False, na=False)]["Roll Number"].tolist()
         else:  # General
-            general_col = "General1" if int(year.split("-")[1]) % 2 != 0 else "General2"
-            student_rolls = df[
-                df["Honours"].str.contains(subject, case=False, na=False) |
-                df[general_col].str.contains(subject, case=False, na=False)
-            ]["Roll Number"]
+            year_num = int(year.split("-")[1]) if "-" in year else 1
+            general_col = "General1" if year_num % 2 != 0 else "General2"
+            rolls = df[
+                df["Honours"].str.contains(subj_full, case=False, na=False) |
+                df[general_col].str.contains(subj_full, case=False, na=False)
+            ]["Roll Number"].tolist()
 
-        total_students = len(student_rolls)
+        total_students = len(rolls)
 
-        # 3. Fetch room info
-        cur.execute("SELECT RoomId, totalCapacity, BenchPerCol FROM RoomInfo")
+        cur.execute("SELECT RoomId, TotalCapacity FROM RoomInfo")
         rooms = cur.fetchall()
+        cur.close()
+        conn.close()
 
-        # 4. Filter suitable rooms
         suitable_rooms = [
-            {"RoomId": r[0], "totalCapacity": r[1]} 
-            for r in rooms if r[1] >= total_students
+            {"RoomId": r[0], "totalCapacity": r[1]}
+            for r in rooms if r[1] >= total_students * 4
         ]
 
-        return jsonify({"rooms": suitable_rooms, "total_students": total_students})
-    
+        # If no suitable room, return all rooms
+        if not suitable_rooms:
+            suitable_rooms = [
+                {"RoomId": r[0], "totalCapacity": r[1]}
+                for r in rooms
+            ]
+
+        return jsonify({
+            "rolls": rolls,
+            "total_students": total_students,
+            "rooms": suitable_rooms
+        })
+
     except Exception as e:
         return jsonify({"error": str(e)})
 
@@ -241,7 +267,7 @@ def can_place(seat_matrix, c, r, paper, sep):
 
 def allocate_seats(seat_matrix, rolls, paper, year, sep, subject):
     if not seat_matrix:
-        return seat_matrix
+        return seat_matrix, []
 
     #rolls = list(rolls)  # make mutable copy
 
@@ -249,12 +275,12 @@ def allocate_seats(seat_matrix, rolls, paper, year, sep, subject):
         for r in range(len(seat_matrix[c])):   # loop benches in column
             if not rolls:                      # stop if no rolls left
                 seat_matrix.reverse()
-                return seat_matrix
+                return seat_matrix, []
 
             if seat_matrix[c][r] == "e" and can_place(seat_matrix, c, r, paper, sep):
                 roll = rolls.pop(0)            # assign one roll only
                 seat_matrix[c][r] = (roll, paper, year, subject)
-    return seat_matrix
+    return seat_matrix, rolls
 
 # ------------------ PDF Export ------------------
 def export_pdf(pdf_path, totalRooms):
@@ -330,8 +356,8 @@ def export_pdf(pdf_path, totalRooms):
 
         for r, row in enumerate(data):
             for c, cell in enumerate(row):
-                if c == 0:  # row number column → always bordered
-                    style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
+                if c == 0:  # row number column → NO border
+                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
                 elif cell is None:  # no seat → no border
                     style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
                 elif cell == "   ":  # gutter → no border
@@ -360,7 +386,7 @@ def export_pdf(pdf_path, totalRooms):
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        SubjectDictionary = {"PHYSA": "Physics", "CHMA": "Chemistry", "MTMA": "Mathematics","ZOOA": "Zoology","HISA": "History", "ENGA": "English", "BNGA": "Bengali", "SNSA": "Sanskrit", "PHILA": "Philosophy", "COMS": "Computer", "ECOA": "Economics", "POLA": "Political Science", "ACEM":"Applied Chemistry"}
+        SubjectDictionary = {"PHYSA": "Physics", "CHMA": "Chemistry", "MTMA": "Mathematics","ZOOA": "Zoology","HISA": "History", "ENGA": "English", "BNGA": "Bengali", "SNSA": "Sanskrit", "PHILA": "Philosophy", "COMS": "Computer", "ECOA": "Economics", "POLA": "Political Science", "ACEM":"Applied Chemistry", "MCBA": "Microbiology","INCA": "Industrial Chemistry"}
         totalRooms = {}
         file = request.files.get("file")
         if not file:
@@ -378,21 +404,32 @@ def index():
             if not line.strip():
                 continue
             date, room, paper, year, subject, subject_type, separation = parse_line(line)
+            rooms = room.split(",")
             print(line)                                                                    #########################
             rolls = get_rolls_by_subject(year, SubjectDictionary[subject], subject_type)
-            print(rolls)                                                                    #########################
-            room_key = f"{room}_{date.replace('/', '-')}"
+            print(rolls)
+            
+            
+            while rolls and rooms:
+                print(f"rolls: {rolls},\nrooms: {rooms}")
+                room_key = f"{rooms[0]}_{date.replace('/', '-')}"
 
-            if room_key in totalRooms:
-                seat_matrix = totalRooms[room_key][0]
-            else:
-                seat_matrix = get_room_info(room)
-                print(seat_matrix)                                                           ########################
-                if not seat_matrix:
-                    continue
-            seat_matrix = allocate_seats(seat_matrix, rolls, paper, year, separation, subject)
-            print(seat_matrix)                                                              #######################
-            totalRooms[room_key] = (seat_matrix, date)
+                if room_key in totalRooms:
+                    seat_matrix = totalRooms[room_key][0]
+                else:
+                    seat_matrix = get_room_info(rooms.pop(0))
+                    if not seat_matrix:
+                        print("not find")
+                        continue
+
+                prev_len = len(rolls)
+                seat_matrix, rolls = allocate_seats(seat_matrix, rolls, paper, year, separation, subject)
+                totalRooms[room_key] = (seat_matrix, date)
+
+                if len(rolls) == prev_len:  # no allocation progress
+                    print("⚠️ Cannot place remaining rolls in available rooms")
+                    break
+
 
         pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], "All_Seating_Allotments.pdf")
         export_pdf(pdf_path, totalRooms)
