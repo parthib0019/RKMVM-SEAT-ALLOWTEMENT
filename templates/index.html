@@ -62,19 +62,105 @@
 
     .header {
       text-align: center;
-      color: #333;
+      margin-bottom: 1rem;
     }
-    .form-section {
-      background: #fff;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+    h2, h3 {
+      color: var(--primary-color);
+      font-weight: 700;
     }
-    label {
+
+    h2 {
+      font-size: 2rem;
+    }
+
+    h3 {
+      font-size: 1.75rem;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .theme-toggle input[type="checkbox"] {
+      display: none;
+    }
+
+    .theme-toggle-label {
+      width: 50px;
+      height: 24px;
+      background: var(--primary-color);
+      border-radius: 50px;
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .theme-toggle-label::after {
+      content: '';
+      width: 20px;
+      height: 20px;
+      background: var(--accent-color);
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: var(--transition);
+    }
+
+    .theme-toggle input:checked + .theme-toggle-label {
+      background: var(--secondary-color);
+    }
+
+    .theme-toggle input:checked + .theme-toggle-label::after {
+      transform: translateX(26px);
+    }
+
+    .theme-toggle .material-icons {
+      margin-left: 0.5rem;
+      font-size: 1.4rem;
+      transition: var(--transition);
+    }
+
+    .theme-toggle .dark-mode-icon {
       display: block;
-      margin-top: 10px;
     }
+
+    .theme-toggle .light-mode-icon {
+      display: none;
+    }
+
+    [data-theme="dark"] .theme-toggle .dark-mode-icon {
+      display: none;
+    }
+
+    [data-theme="dark"] .theme-toggle .light-mode-icon {
+      display: block;
+    }
+
+    .form-container {
+      background: var(--card-background);
+      padding: 1rem;
+      color: #6b7280;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      max-width: 1200px;
+      margin: 0 auto 1rem;
+      transition: var(--transition);
+    }
+
+    .form-container label {
+      font-weight: 600;
+      color: var(--form-label-color);
+      margin-bottom: 0.5rem;
+      display: block;
+      font-size: 0.875rem;
+    }
+
     input, select {
       width: 100%;
       padding: 0.75rem;
@@ -298,37 +384,181 @@
     .calendar-day {
       padding: 0.5rem;
       cursor: pointer;
-      padding: 5px;
-      border-radius: 4px;
-    }
-    .day:hover {
-      background: #007BFF;
-      color: #fff;
-    }
-    .multi-select {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      padding: 5px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background: #fff;
-      max-width: 220px;
+      border-radius: var(--border-radius);
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.875rem;
+      transition: var(--transition);
     }
 
-    .multi-select .selected-rooms {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
+    .calendar-day:hover {
+      background: #e2e8f0;
+      transform: scale(1.05);
     }
 
-    .tag {
-      background: #007BFF;
-      color: white;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 0.85rem;
+    .calendar-day.selected {
+      background: var(--primary-color);
+      color: var(--accent-color);
+      border: none;
+    }
+
+    .calendar-day.disabled {
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: var(--card-background);
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+
+    .modal-content p {
+      margin-bottom: 1rem;
+      color: var(--text-color);
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .modal-content .btnbar {
       display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .room-suggestions {
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-color);
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .item-list {
+      margin-top: 1rem;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f1f5f9;
+      padding: 0.75rem;
+      border-radius: var(--border-radius);
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      transition: var(--transition);
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    [data-theme="dark"] .item {
+      background: #475569;
+    }
+
+    .item-content {
+      flex-grow: 1;
+      margin-right: 1rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .actions button {
+      background: var(--secondary-color);
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      color: var(--button-text-color);
+      border: 2px solid var(--primary-color);
+      border-radius: var(--border-radius);
+      font-family: 'Roboto Mono', monospace;
+      font-weight: 700;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .actions button:hover {
+      background: var(--primary-color);
+      color: var(--button-text-color);
+      box-shadow: 0 0 20px rgba(74, 144, 226, 0.7), 0 0 10px rgba(74, 144, 226, 0.4);
+      transform: translateY(-3px);
+    }
+
+    .actions button:active {
+      transform: translateY(0);
+      box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+    }
+
+    .actions button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 255, 0.2) 50%,
+        transparent
+      );
+      opacity: 0;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      transform: translateX(-100%) skewX(-45deg);
+    }
+
+    .actions button:hover::after {
+      opacity: 1;
+      transform: translateX(100%) skewX(-45deg);
+    }
+
+    .actions button span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .actions button.edit {
+      background: var(--secondary-color);
+    }
+
+    .actions button.remove {
+      background: var(--error-color);
+    }
+
+    .actions button.remove:hover {
+      background: #dc2626;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.7), 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+
+    .selected-rooms-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .selected-room {
+      background: var(--primary-color);
+      color: var(--accent-color);
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--border-radius);
+      display: inline-flex;
       align-items: center;
       gap: 0.25rem;
       font-family: 'Roboto Mono', monospace;
@@ -477,272 +707,740 @@
     const calendar = document.getElementById("calendar");
     let activeInput = null;
     let currentDate = new Date();
-    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    const dayNames = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+    let selectedDate = new Date();
+    const today = new Date();
+    let modalAction = null;
+    let editMode = null;
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    const subjectMap = {
+      "PHYSA": "Physics",
+      "CHMA": "Chemistry",
+      "MTMA": "Mathematics",
+      "MCBA": "Microbiology",
+      "COMS": "Computer Science",
+      "INCA": "Industrial Chemistry",
+      "ACEM": "Applied Chemistry",
+      "ECOA": "Economics",
+      "ZOOA": "Zoology",
+      "BNGA": "Bengali",
+      "ENGA": "English",
+      "SNSA": "Sanskrit",
+      "HISA": "History",
+      "PHILA": "Philosophy",
+      "POLA": "Political Science"
+    };
+    const roomOptions = [
+      "1", "13", "15", "16", "18", "20", "3A", "Sister Nivedita Hall", "Tejasananda Hall"
+    ];
+    let allEntries = [];
+    let numInputs = 0;
+    let currentFormIndex = 0;
 
-    const usedPapers = new Set();
-
-    /* ---------- Multi-select helper ---------- */
-    function setupMultiSelect(containerId, availableRooms=[]) {
-      const container = document.getElementById(containerId);
-      const select = container.querySelector(".room-options");
-      const selectedContainer = container.querySelector(".selected-rooms");
-
-      function populateOptions(rooms) {
-        select.innerHTML = `<option value="">--Select Room--</option>`;
-        rooms.forEach(r => {
-          const opt = document.createElement("option");
-          opt.value = r.RoomId;
-          opt.textContent = `${r.RoomId} (Cap:${r.totalCapacity})`;
-          select.appendChild(opt);
-        });
-      }
-      populateOptions(availableRooms);
-
-      select.addEventListener("change", () => {
-        const value = select.value;
-        if (!value) return;
-        if (selectedContainer.querySelector(`[data-value="${value}"]`)) {
-          select.value = "";
-          return;
-        }
-        const tag = document.createElement("div");
-        tag.classList.add("tag");
-        tag.setAttribute("data-value", value);
-        tag.innerHTML = `${value} <span class="remove">❌</span>`;
-        selectedContainer.appendChild(tag);
-        tag.querySelector(".remove").addEventListener("click", () => tag.remove());
-        select.value = "";
-      });
-
-      return { populateOptions };
+    function toggleTheme() {
+      const body = document.body;
+      const currentTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      body.setAttribute('data-theme', currentTheme);
+      localStorage.setItem('theme', currentTheme);
+      document.getElementById('themeSwitch').checked = currentTheme === 'dark';
     }
 
-    /* ---------- Generate forms ---------- */
-    function generateForms() {
-      inputsContainer.innerHTML = "";
-      const n = parseInt(document.getElementById("numInputs").value || 1);
-
-      for (let i = 0; i < n; i++) {
-        const div = document.createElement("div");
-        div.classList.add("form-section");
-        div.innerHTML = `
-          <h3>Input ${i+1}</h3>
-          <label>Date:</label>
-          <input type="text" class="date${i}" placeholder="dd/mm/yyyy" readonly onclick="showCalendar(this)">
-          <label>Paper Name:</label>
-          <input type="text" class="paper${i}" placeholder="enter paper name">
-          <label>Year:</label>
-          <select class="year${i}">
-            <option value="UG-1">UG-1</option>
-            <option value="UG-2">UG-2</option>
-            <option value="UG-3">UG-3</option>
-            <option value="PG-1">PG-1</option>
-            <option value="PG-2">PG-2</option>
-          </select>
-          <label>Subject:</label>
-          <select class="subject${i}">
-            <option value="PHYSA">PHYSA</option>
-            <option value="CHMA">CHMA</option>
-            <option value="MTMA">MTMA</option>
-            <option value="MCBA">MCBA</option>
-            <option value="COMS">COMS</option>
-            <option value="INCA">INCA</option>
-            <option value="ACEM">ACEM</option>
-            <option value="ECOA">ECOA</option>
-            <option value="ZOOA">ZOOA</option>
-            <option value="BNGA">BNGA</option>
-            <option value="ENGA">ENGA</option>
-            <option value="SNSA">SNSA</option>
-            <option value="HISA">HISA</option>
-            <option value="PHILA">PHILA</option>
-            <option value="POLA">POLA</option>
-          </select>
-          <label>Subject Type:</label>
-          <select class="stype${i}">
-            <option value="Major">Major</option>
-            <option value="Minor">Minor</option>
-            <option value="General">General</option>
-          </select>
-          <label>Separation:</label>
-          <select class="separation${i}">
-            <option value="1">1</option>
-            <option value="2">2</option>
-          </select>
-          <span class="studentCount${i}" style="margin-left:10px;color:#007BFF;"></span>
-          <label>Room Number(s):</label>
-          <div class="multi-select" id="roomSelect${i}">
-            <div class="selected-rooms"></div>
-            <select class="room-options">
-              <option value="">--Select Room--</option>
-            </select>
-          </div>
-          <div class="input-feedback${i}" style="color:red;margin-top:8px;"></div>
-        `;
-        inputsContainer.appendChild(div);
-
-        const multi = setupMultiSelect(`roomSelect${i}`);
-        const yearSel = div.querySelector(`.year${i}`);
-        const subjSel = div.querySelector(`.subject${i}`);
-        const stypeSel = div.querySelector(`.stype${i}`);
-        const sepSel = div.querySelector(`.separation${i}`);
-        const paperInp = div.querySelector(`.paper${i}`);
-        const dateInp = div.querySelector(`.date${i}`);
-        const studentSpan = div.querySelector(`.studentCount${i}`);
-        const feedbackDiv = div.querySelector(`.input-feedback${i}`);
-
-        async function fetchRooms() {
-          feedbackDiv.textContent = "";
-          const payload = {
-            date: dateInp.value,
-            paperName: paperInp.value,
-            year: yearSel.value,
-            subject: subjSel.value,
-            subjectType: stypeSel.value,
-            separation: sepSel.value
-          };
-          try {
-            const res = await fetch("/roomSuggestion", {
-              method: "POST",
-              headers: {"Content-Type": "application/json"},
-              body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            if (data.error) {
-              feedbackDiv.textContent = data.error;
-              return;
-            }
-            if (data.total_students !== undefined) {
-              studentSpan.textContent = `Total Students: ${data.total_students}`;
-            }
-            multi.populateOptions(data.rooms || []);
-            validateBlock(i, data.total_students);
-          } catch {
-            feedbackDiv.textContent = "Error fetching suggestions";
-          }
-        }
-
-        yearSel.addEventListener("change", fetchRooms);
-        subjSel.addEventListener("change", fetchRooms);
-        stypeSel.addEventListener("change", fetchRooms);
-        sepSel.addEventListener("change", fetchRooms);
-        paperInp.addEventListener("blur", fetchRooms);
-        dateInp.addEventListener("blur", fetchRooms);
-      }
-    }
-
-    /* ---------- Calendar ---------- */
-    function showCalendar(input) {
-      activeInput = input;
-      renderCalendar(currentDate);
-      const rect = input.getBoundingClientRect();
-      calendar.style.top = (window.scrollY + rect.bottom + 5) + "px";
-      calendar.style.left = rect.left + "px";
-      calendar.style.display = "block";
-    }
-    function renderCalendar(date) {
-      calendar.innerHTML = "";
-      const month = date.getMonth(), year = date.getFullYear();
-      const header = document.createElement("div");
-      header.classList.add("calendar-header");
-      header.innerHTML = `<button id="prev">&#9664;</button><span>${monthNames[month]} ${year}</span><button id="next">&#9654;</button>`;
-      calendar.appendChild(header);
-
-      const daysRow = document.createElement("div");
-      daysRow.classList.add("days");
-      dayNames.forEach(d => { const cell = document.createElement("div"); cell.innerHTML = "<b>"+d+"</b>"; daysRow.appendChild(cell); });
-      calendar.appendChild(daysRow);
-
-      const firstDay = new Date(year, month, 1).getDay();
-      const lastDate = new Date(year, month+1, 0).getDate();
-      const daysGrid = document.createElement("div");
-      daysGrid.classList.add("days");
-      for (let i=0;i<firstDay;i++) daysGrid.appendChild(document.createElement("div"));
-      for (let d=1; d<=lastDate; d++) {
-        const day = document.createElement("div");
-        day.classList.add("day");
-        day.textContent = d;
-        day.onclick = () => { activeInput.value = `${d}/${month+1}/${year}`; calendar.style.display="none"; };
-        daysGrid.appendChild(day);
-      }
-      calendar.appendChild(daysGrid);
-      document.getElementById("prev").onclick = () => { currentDate=new Date(year,month-1,1); renderCalendar(currentDate); };
-      document.getElementById("next").onclick = () => { currentDate=new Date(year,month+1,1); renderCalendar(currentDate); };
-    }
-    document.addEventListener("click", e => {
-      if (!calendar.contains(e.target) && e.target !== activeInput) calendar.style.display="none";
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.body.setAttribute('data-theme', savedTheme);
+      document.getElementById('themeSwitch').checked = savedTheme === 'dark';
+      addEnterKeyListeners();
     });
 
-    /* ---------- Validation ---------- */
-    function validateBlock(i, totalStudents) {
-      const div = document.querySelector(`.form-section:nth-of-type(${i+1})`);
-      const sep = div.querySelector(`.separation${i}`).value;
-      const feedbackDiv = div.querySelector(`.input-feedback${i}`);
-      const paper = div.querySelector(`.paper${i}`).value.trim();
-      const tags = Array.from(div.querySelectorAll(`#roomSelect${i} .tag`));
-      const selectedRooms = tags.map(t => t.getAttribute("data-value"));
+    function addEnterKeyListeners() {
+      document.getElementById("numInputs").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (validateNumInputs()) {
+            generateForms();
+          } else {
+            shakeField(document.getElementById("numInputs"));
+          }
+        }
+      });
 
-      if (paper && usedPapers.has(paper)) {
-        feedbackDiv.textContent = "Paper name already used in another input";
+      document.addEventListener('keydown', (e) => {
+        if (e.key === "Enter" && document.getElementById("mainForm").style.display === "block") {
+          e.preventDefault();
+          const index = currentFormIndex;
+          const fields = [
+            document.querySelector(`.date${index}`),
+            document.querySelector(`.paper${index}`),
+            document.querySelector(`.year${index}`),
+            document.querySelector(`.subject${index}`),
+            document.querySelector(`.stype${index}`),
+            document.querySelector(`.separation${index}`),
+            document.querySelector(`.room${index}`)
+          ];
+          const currentField = document.activeElement;
+          const currentIndex = fields.indexOf(currentField);
+          if (currentIndex === -1) return;
+
+          if (validateField(currentField)) {
+            const nextIndex = currentIndex + 1;
+            if (nextIndex < fields.length) {
+              fields[nextIndex].focus();
+            } else {
+              saveCurrentForm();
+            }
+          } else {
+            shakeField(currentField);
+          }
+        }
+      });
+    }
+
+    function shakeField(input) {
+      input.style.animation = 'none';
+      input.offsetHeight; // Trigger reflow
+      input.style.animation = 'shake 0.3s ease-in-out';
+    }
+
+    function validateNumInputs() {
+      const numInput = document.getElementById("numInputs");
+      const warn = document.querySelector(".numInputsWarn");
+      if (!numInput.value || numInput.value < 1) {
+        numInput.classList.add("error");
+        warn.style.display = "block";
         return false;
       }
-      usedPapers.add(paper);
-
-      if (totalStudents) {
-        const multiplier = sep==="2" ? 9 : 4;
-        let capacitySum = 0;
-        const sel = div.querySelector(".room-options");
-        selectedRooms.forEach(r => {
-          const opt = Array.from(sel.options).find(o => o.value===r);
-          if (opt) {
-            const m = opt.textContent.match(/Cap:?(\d+)/);
-            if (m) capacitySum += parseInt(m[1]);
-          }
-        });
-        if (capacitySum < multiplier*totalStudents) {
-          feedbackDiv.textContent = `Capacity ${capacitySum} < Required ${multiplier*totalStudents}`;
-          return false;
-        }
-      }
-      feedbackDiv.textContent = "";
+      numInput.classList.remove("error");
+      warn.style.display = "none";
       return true;
     }
 
-    /* ---------- Submit ---------- */
-    function submitData() {
-      usedPapers.clear();
-      const n = parseInt(document.getElementById("numInputs").value || 0);
-      let lines = [];
-      for (let i=0;i<n;i++) {
-        const div = document.querySelector(`.form-section:nth-of-type(${i+1})`);
-        const date = div.querySelector(`.date${i}`).value.trim();
-        const paper = div.querySelector(`.paper${i}`).value.trim();
-        const year = div.querySelector(`.year${i}`).value.trim();
-        const subject = div.querySelector(`.subject${i}`).value.trim();
-        const stype = div.querySelector(`.stype${i}`).value.trim();
-        const sep = div.querySelector(`.separation${i}`).value.trim();
-        const tags = Array.from(div.querySelectorAll(`#roomSelect${i} .tag`));
-        const rooms = tags.map(t => t.getAttribute("data-value")).join(",");
-
-        if (!date||!paper||!year||!subject||!stype||!sep||!rooms) continue;
-        if (!validateBlock(i)) { alert("Fix errors before submitting"); return; }
-
-        const line = `${date}#${rooms}!${paper}@${year}%${subject}^${stype}$${sep}`;
-        lines.push(line);
+    function validateField(input, shake = false) {
+      const warn = input.parentElement.querySelector(".warning");
+      const fieldName = warn.className.match(/(\w+)Warn/)[1];
+      let warningText = '';
+      switch (fieldName) {
+        case 'date': warningText = 'Please enter a valid date'; break;
+        case 'paper': warningText = 'Please enter a valid paper name'; break;
+        case 'year': warningText = 'Please select a valid year'; break;
+        case 'subject': warningText = 'Please select a valid subject'; break;
+        case 'stype': warningText = 'Please select a valid subject type'; break;
+        case 'separation': warningText = 'Please select a valid separation'; break;
+        case 'room': warningText = 'Please select at least one valid room'; break;
+        default: warningText = 'Please enter a valid value';
       }
-      if (lines.length===0) { alert("No valid inputs"); return; }
-
-      const blob = new Blob([lines.join("\n")], {type:"text/plain"});
-      const fd = new FormData();
-      fd.append("file", blob, "input.txt");
-
-      fetch("/", {method:"POST", body:fd})
-        .then(res=>res.text())
-        .then(html=>{ document.open(); document.write(html); document.close(); })
-        .catch(err=>console.error("Error:",err));
+      if (!input.value.trim()) {
+        input.classList.add("error");
+        warn.style.display = "block";
+        warn.textContent = warningText;
+        if (shake) {
+          shakeField(input);
+        }
+        return false;
+      }
+      if (input.classList.contains("date-input")) {
+        const regex = /^(0[1-9]|[12]\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+        if (!regex.test(input.value.trim())) {
+          input.classList.add("error");
+          warn.style.display = "block";
+          warn.textContent = warningText;
+          if (shake) {
+            shakeField(input);
+          }
+          return false;
+        }
+      }
+      input.classList.remove("error");
+      warn.style.display = "none";
+      return true;
     }
 
+    function resetNumInputs() {
+      document.getElementById("numInputs").value = "1";
+      document.querySelector(".numInputsWarn").style.display = "none";
+      document.getElementById("numInputs").classList.remove("error");
+    }
 
+    function generateForms() {
+      if (!validateNumInputs()) return;
+      numInputs = parseInt(document.getElementById("numInputs").value);
+      allEntries = Array.from({length: numInputs}, () => ({ rooms: [] }));
+      document.getElementById("numInputsContainer").style.display = "none";
+      document.getElementById("mainForm").style.display = "block";
+      currentFormIndex = 0;
+      renderForm(currentFormIndex);
+      updateNavigationButtons();
+      renderInputsList();
+      document.getElementById("navigationButtons").style.display = "flex";
+    }
+
+    function getAvailableRooms(index) {
+      const selectedRooms = allEntries[index].rooms || [];
+      return roomOptions.filter(room => !selectedRooms.includes(room));
+    }
+
+    function renderForm(index) {
+      inputsContainer.innerHTML = "";
+      const div = document.createElement("div");
+      div.classList.add("form-section", "active", "mb-3");
+      const year = allEntries[index].year || '';
+      const isPG = year.startsWith('PG');
+      const subjectOptions = Object.keys(subjectMap).filter(code => code !== 'ACEM' || isPG).map(code => `<option value="${code}">${subjectMap[code]}</option>`).join('');
+      const availableRooms = getAvailableRooms(index);
+      div.innerHTML = `
+        <h3 class="mb-3">Input ${index + 1} of ${numInputs}</h3>
+        <label for="date${index}">Date:</label>
+        <input type="text" class="form-control date-input date${index}" id="date${index}" placeholder="dd/mm/yyyy" required readonly onclick="showCalendar(this)">
+        <div class="warning dateWarn">Please enter a valid date</div>
+        <label for="paperName${index}" class="mt-2">Paper Name:</label>
+        <input type="text" class="form-control paper${index}" id="paperName${index}" placeholder="enter the name of the paper" required>
+        <div class="warning paperWarn">Please enter a valid paper name</div>
+        <label for="year${index}" class="mt-2">Year:</label>
+        <select class="form-control year${index}" id="year${index}" required>
+          <option value="" disabled selected>-- Select Year --</option>
+          <option value="UG-1">UG-1</option>
+          <option value="UG-2">UG-2</option>
+          <option value="UG-3">UG-3</option>
+          <option value="UG-4">UG-4</option>
+          <option value="PG-1">PG-1</option>
+          <option value="PG-2">PG-2</option>
+        </select>
+        <div class="warning yearWarn">Please select a valid year</div>
+        <label for="subject${index}" class="mt-2">Subject:</label>
+        <select class="form-control subject${index}" id="subject${index}" required>
+          <option value="" disabled selected>-- Select Subject --</option>
+          ${subjectOptions}
+        </select>
+        <div class="warning subjectWarn">Please select a valid subject</div>
+        <label for="subjectType${index}" class="mt-2">Subject Type:</label>
+        <select class="form-control stype${index}" id="subjectType${index}" required>
+          <option value="" disabled selected>-- Select Subject Type --</option>
+          <option value="Major">Major</option>
+          <option value="Minor">Minor</option>
+          <option value="General">General</option>
+        </select>
+        <div class="warning stypeWarn">Please select a valid subject type</div>
+        <label for="separation${index}" class="mt-2">Separation:</label>
+        <select class="form-control separation${index}" id="separation${index}" required>
+          <option value="" disabled selected>-- Select Separation --</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+        </select>
+        <div class="warning separationWarn">Please select a valid separation</div>
+        <label for="room${index}" class="mt-2">Room Number:</label>
+        <select class="form-control room${index}" id="room${index}" required>
+          <option value="" disabled selected>-- Select Room --</option>
+          ${availableRooms.map(room => `<option value="${room}">${room}</option>`).join('')}
+        </select>
+        <div class="warning roomWarn">Please select at least one valid room</div>
+        <div class="selected-rooms-container" id="selectedRooms${index}"></div>
+        <div class="room-suggestions" id="roomSuggestions${index}"></div>
+      `;
+      inputsContainer.appendChild(div);
+
+      // Set default date to today
+      const dateInput = document.querySelector(`.date${index}`);
+      if (!dateInput.value) {
+        const todayFormatted = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+        dateInput.value = todayFormatted;
+      }
+
+      // Load saved data if existing
+      const entry = allEntries[index];
+      if (entry.date) document.querySelector(`.date${index}`).value = entry.date;
+      if (entry.paper) document.querySelector(`.paper${index}`).value = entry.paper;
+      if (entry.year) {
+        document.querySelector(`.year${index}`).value = entry.year;
+        handleYearChange(index);
+      }
+      if (entry.subject) document.querySelector(`.subject${index}`).value = entry.subject;
+      if (entry.stype) document.querySelector(`.stype${index}`).value = entry.stype;
+      if (entry.separation) document.querySelector(`.separation${index}`).value = entry.separation;
+      if (entry.rooms && entry.rooms.length > 0) {
+        updateSelectedRooms(index, entry.rooms);
+      }
+
+      // Attach listeners
+      document.querySelector(`.date${index}`).addEventListener('change', () => getRoomSuggestions(index));
+      document.querySelector(`.paper${index}`).addEventListener('input', () => getRoomSuggestions(index));
+      document.querySelector(`.year${index}`).addEventListener('change', () => getRoomSuggestions(index));
+      document.querySelector(`.subject${index}`).addEventListener('change', () => getRoomSuggestions(index));
+      document.querySelector(`.stype${index}`).addEventListener('change', () => getRoomSuggestions(index));
+      document.querySelector(`.separation${index}`).addEventListener('change', () => getRoomSuggestions(index));
+      document.querySelector(`.room${index}`).addEventListener('change', (e) => {
+        if (e.target.value) {
+          addRoom(index, e.target.value);
+          e.target.value = '';
+          renderForm(index);
+        }
+      });
+    }
+
+    function handleYearChange(index) {
+      const year = document.querySelector(`.year${index}`).value;
+      const stypeSelect = document.querySelector(`.stype${index}`);
+      const subjectSelect = document.querySelector(`.subject${index}`);
+      const isPG = year.startsWith('PG');
+      if (isPG) {
+        stypeSelect.value = 'Major';
+        stypeSelect.disabled = true;
+        const subjectOptions = Object.keys(subjectMap).map(code => `<option value="${code}">${subjectMap[code]}</option>`).join('');
+        subjectSelect.innerHTML = `
+          <option value="" disabled selected>-- Select Subject --</option>
+          ${subjectOptions}
+        `;
+      } else {
+        stypeSelect.disabled = false;
+        const subjectOptions = Object.keys(subjectMap).filter(code => code !== 'ACEM').map(code => `<option value="${code}">${subjectMap[code]}</option>`).join('');
+        subjectSelect.innerHTML = `
+          <option value="" disabled selected>-- Select Subject --</option>
+          ${subjectOptions}
+        `;
+        if (stypeSelect.value === 'Major' && !year.startsWith('UG')) {
+          stypeSelect.value = '';
+        }
+      }
+    }
+
+    function addRoom(index, room) {
+      if (!allEntries[index].rooms) {
+        allEntries[index].rooms = [];
+      }
+      if (!allEntries[index].rooms.includes(room)) {
+        allEntries[index].rooms.push(room);
+        updateSelectedRooms(index, allEntries[index].rooms);
+        getRoomSuggestions(index);
+      }
+    }
+
+    function removeRoom(index, room) {
+      allEntries[index].rooms = allEntries[index].rooms.filter(r => r !== room);
+      updateSelectedRooms(index, allEntries[index].rooms);
+      renderForm(index);
+      getRoomSuggestions(index);
+    }
+
+    function updateSelectedRooms(index, rooms) {
+      const container = document.getElementById(`selectedRooms${index}`);
+      container.innerHTML = '';
+      if (rooms && rooms.length > 0) {
+        rooms.forEach(room => {
+          const roomTag = document.createElement('div');
+          roomTag.className = 'selected-room';
+          roomTag.innerHTML = `
+            ${room}
+            <span class="remove-room" onclick="removeRoom(${index}, '${room}')">×</span>
+          `;
+          container.appendChild(roomTag);
+        });
+      }
+    }
+
+    function saveCurrentForm() {
+      const index = currentFormIndex;
+      const date = document.querySelector(`.date${index}`).value.trim();
+      const paper = document.querySelector(`.paper${index}`).value.trim();
+      const year = document.querySelector(`.year${index}`).value.trim();
+      const subject = document.querySelector(`.subject${index}`).value.trim();
+      const stype = document.querySelector(`.stype${index}`).value.trim();
+      const separation = document.querySelector(`.separation${index}`).value.trim();
+      const rooms = allEntries[index].rooms || [];
+
+      let valid = true;
+      const fields = [
+        { element: document.querySelector(`.date${index}`), warn: 'Please enter a valid date' },
+        { element: document.querySelector(`.paper${index}`), warn: 'Please enter a valid paper name' },
+        { element: document.querySelector(`.year${index}`), warn: 'Please select a valid year' },
+        { element: document.querySelector(`.subject${index}`), warn: 'Please select a valid subject' },
+        { element: document.querySelector(`.stype${index}`), warn: 'Please select a valid subject type' },
+        { element: document.querySelector(`.separation${index}`), warn: 'Please select a valid separation' },
+        { element: document.querySelector(`.room${index}`), warn: 'Please select at least one valid room' }
+      ];
+      fields.forEach(field => {
+        if (!validateField(field.element, true)) {
+          valid = false;
+        }
+      });
+
+      if (rooms.length === 0) {
+        const roomSelect = document.querySelector(`.room${index}`);
+        roomSelect.classList.add("error");
+        roomSelect.parentElement.querySelector(".roomWarn").style.display = "block";
+        valid = false;
+      }
+
+      if (!valid) {
+        return false;
+      }
+
+      // Check for conflicts
+      const conflict = allEntries.find((entry, i) => i !== index && entry.date === date && entry.year === year && entry.subject === subject);
+      if (conflict) {
+        const message = `${year} has ${subjectMap[subject]} subject exam on ${date}`;
+        showWarningModal(message);
+        return false;
+      }
+
+      allEntries[index] = { date, paper, year, subject, stype, separation, rooms };
+      renderInputsList();
+      if (currentFormIndex < numInputs - 1) {
+        currentFormIndex++;
+        renderForm(currentFormIndex);
+        updateNavigationButtons();
+      } else {
+        showConfirmModal('submit');
+      }
+      return true;
+    }
+
+    function showWarningModal(message) {
+      document.getElementById('warningMessage').textContent = message;
+      document.getElementById('warningModal').style.display = 'flex';
+    }
+
+    function closeWarningModal() {
+      document.getElementById('warningModal').style.display = 'none';
+    }
+
+    function renderInputsList() {
+      const list = document.getElementById("inputsList");
+      list.innerHTML = "";
+      allEntries.forEach((entry, idx) => {
+        if (Object.keys(entry).length > 0 && entry.rooms && entry.rooms.length > 0) {
+          const div = document.createElement("div");
+          div.className = "item";
+          div.innerHTML = `
+            <div class="item-content"><b>Input ${idx + 1}:</b> Date: ${entry.date}, Paper: ${entry.paper}, Year: ${entry.year}, Subject: ${subjectMap[entry.subject]}, Type: ${entry.stype}, Separation: ${entry.separation}, Rooms: ${entry.rooms.join(', ')}</div>
+            <div class="actions">
+              <button class="edit" onclick="editInput(${idx})"><span>Edit</span></button>
+              <button class="remove" onclick="showConfirmModal('removeInput', ${idx})"><span>Remove</span></button>
+            </div>
+          `;
+          list.appendChild(div);
+        }
+      });
+      const isAllFilled = allEntries.every(entry => Object.keys(entry).length > 0 && entry.rooms && entry.rooms.length > 0);
+      if (isAllFilled) {
+        inputsContainer.style.display = 'none';
+        document.getElementById("navigationButtons").style.display = 'none';
+      } else {
+        inputsContainer.style.display = 'block';
+        document.getElementById("navigationButtons").style.display = 'flex';
+      }
+    }
+
+    function updateNavigationButtons() {
+      const prevBtn = document.querySelector('[onclick="prevForm()"]');
+      const nextBtn = document.getElementById('nextOrSubmitBtn');
+      if (prevBtn) prevBtn.style.display = currentFormIndex === 0 ? 'none' : 'block';
+      if (nextBtn) {
+        if (currentFormIndex === numInputs - 1) {
+          nextBtn.innerHTML = '<span>Generate Allotment</span>';
+        } else {
+          nextBtn.innerHTML = '<span>Next</span>';
+        }
+      }
+    }
+
+    window.editInput = function(idx) {
+      editMode = idx;
+      currentFormIndex = idx;
+      renderForm(idx);
+      updateNavigationButtons();
+      inputsContainer.style.display = 'block';
+      document.getElementById("navigationButtons").style.display = 'flex';
+    };
+
+    window.removeInput = function(idx) {
+      allEntries.splice(idx, 1);
+      numInputs--;
+      if (currentFormIndex >= numInputs) {
+        currentFormIndex = Math.max(0, numInputs - 1);
+      }
+      renderInputsList();
+      if (numInputs > 0) {
+        renderForm(currentFormIndex);
+        updateNavigationButtons();
+      } else {
+        showConfirmModal('backToNumInputs');
+      }
+      alert(`Input ${idx + 1} removed successfully.`);
+    };
+
+    function showCalendar(input) {
+      activeInput = input;
+      const rect = input.getBoundingClientRect();
+      calendar.style.top = `${rect.bottom + window.scrollY}px`;
+      calendar.style.left = `${rect.left + window.scrollX}px`;
+      calendar.style.display = 'block';
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      calendar.innerHTML = "";
+      const month = currentDate.getMonth();
+      const year = currentDate.getFullYear();
+
+      const header = document.createElement("div");
+      header.classList.add("calendar-header");
+      header.innerHTML = `
+        <button id="prevMonth" aria-label="Previous month">&#9664;</button>
+        <span id="currentMonthYear">${monthNames[month]} ${year}</span>
+        <button id="nextMonth" aria-label="Next month">&#9654;</button>
+      `;
+      calendar.appendChild(header);
+
+      const daysRow = document.createElement("div");
+      daysRow.classList.add("calendar-grid");
+      dayNames.forEach(d => {
+        const cell = document.createElement("div");
+        cell.classList.add("calendar-day-name");
+        cell.innerHTML = d;
+        daysRow.appendChild(cell);
+      });
+      calendar.appendChild(daysRow);
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
+      const daysGrid = document.createElement("div");
+      daysGrid.classList.add("calendar-grid");
+
+      for (let i = 0; i < firstDay; i++) {
+        const day = document.createElement("div");
+        day.classList.add("calendar-day", "disabled");
+        daysGrid.appendChild(day);
+      }
+
+      for (let d = 1; d <= lastDate; d++) {
+        const currentCalendarDate = new Date(year, month, d);
+        const isPastDate = currentCalendarDate < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const isSelected = selectedDate && 
+          selectedDate.getDate() === d && 
+          selectedDate.getMonth() === month && 
+          selectedDate.getFullYear() === year;
+        const day = document.createElement("div");
+        day.classList.add("calendar-day");
+        if (isSelected) day.classList.add("selected");
+        if (isPastDate) day.classList.add("disabled");
+        day.textContent = d;
+        if (!isPastDate) {
+          day.onclick = () => selectDate(d);
+          day.onkeydown = (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              selectDate(d);
+            }
+          };
+          day.tabIndex = 0;
+        }
+        daysGrid.appendChild(day);
+      }
+      calendar.appendChild(daysGrid);
+
+      document.getElementById("prevMonth").onclick = () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+      };
+      document.getElementById("nextMonth").onclick = () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+      };
+    }
+
+    function selectDate(day) {
+      const month = currentDate.getMonth();
+      const year = currentDate.getFullYear();
+      selectedDate = new Date(year, month, day);
+      activeInput.value = `${String(day).padStart(2, '0')}/${String(month + 1).padStart(2, '0')}/${year}`;
+      validateField(activeInput);
+      calendar.style.display = 'none';
+      const index = parseInt(activeInput.className.match(/date(\d+)/)[1]);
+      getRoomSuggestions(index);
+    }
+
+    document.addEventListener("click", (e) => {
+      if (!calendar.contains(e.target) && e.target !== activeInput && !e.target.closest("#prevMonth") && !e.target.closest("#nextMonth")) {
+        calendar.style.display = "none";
+      }
+    });
+
+    function showConfirmModal(action, idx = null) {
+      modalAction = { action, idx };
+      const modal = document.getElementById('confirmModal');
+      const message = document.getElementById('modalMessage');
+      if (action === 'submit') {
+        const index = currentFormIndex;
+        const date = document.querySelector(`.date${index}`).value.trim();
+        const paper = document.querySelector(`.paper${index}`).value.trim();
+        const year = document.querySelector(`.year${index}`).value.trim();
+        const subject = document.querySelector(`.subject${index}`).value.trim();
+        const stype = document.querySelector(`.stype${index}`).value.trim();
+        const separation = document.querySelector(`.separation${index}`).value.trim();
+        const rooms = allEntries[index].rooms || [];
+
+        let valid = true;
+        const fields = [
+          { element: document.querySelector(`.date${index}`), warn: 'Please enter a valid date' },
+          { element: document.querySelector(`.paper${index}`), warn: 'Please enter a valid paper name' },
+          { element: document.querySelector(`.year${index}`), warn: 'Please select a valid year' },
+          { element: document.querySelector(`.subject${index}`), warn: 'Please select a valid subject' },
+          { element: document.querySelector(`.stype${index}`), warn: 'Please select a valid subject type' },
+          { element: document.querySelector(`.separation${index}`), warn: 'Please select a valid separation' },
+          { element: document.querySelector(`.room${index}`), warn: 'Please select at least one valid room' }
+        ];
+        fields.forEach(field => {
+          if (!validateField(field.element, true)) {
+            valid = false;
+          }
+        });
+
+        if (rooms.length === 0) {
+          const roomSelect = document.querySelector(`.room${index}`);
+          roomSelect.classList.add("error");
+          roomSelect.parentElement.querySelector(".roomWarn").style.display = "block";
+          valid = false;
+        }
+
+        if (!valid) {
+          closeModal();
+          return false;
+        }
+
+        // Check for conflicts
+        const conflict = allEntries.find((entry, i) => i !== index && entry.date === date && entry.year === year && entry.subject === subject);
+        if (conflict) {
+          const message = `${year} has ${subjectMap[subject]} subject exam on ${date}`;
+          showWarningModal(message);
+          closeModal();
+          return false;
+        }
+
+        allEntries[index] = { date, paper, year, subject, stype, separation, rooms };
+        renderInputsList();
+        message.textContent = 'Are you sure you want to generate the allotment?';
+      } else if (action === 'removeInput') {
+        message.textContent = `Are you sure you want to remove Input ${idx + 1}?`;
+      } else if (action === 'backToNumInputs') {
+        message.textContent = 'Going back will discard all input entries. Are you sure?';
+      } else if (action === 'resetForm') {
+        message.textContent = 'Are you sure you want to reset all form data?';
+      }
+      modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('confirmModal').style.display = 'none';
+      modalAction = null;
+    }
+
+    function confirmAction() {
+      const { action, idx } = modalAction || {};
+      if (action === 'submit') {
+        submitData();
+      } else if (action === 'removeInput') {
+        removeInput(idx);
+      } else if (action === 'backToNumInputs') {
+        document.getElementById("numInputsContainer").style.display = "block";
+        document.getElementById("mainForm").style.display = "none";
+        allEntries = [];
+        numInputs = 0;
+        currentFormIndex = 0;
+        resetNumInputs();
+      } else if (action === 'resetForm') {
+        resetForm();
+      }
+      closeModal();
+    }
+
+    function resetForm() {
+      allEntries = Array.from({length: numInputs}, () => ({ rooms: [] }));
+      currentFormIndex = 0;
+      renderForm(currentFormIndex);
+      updateNavigationButtons();
+      renderInputsList();
+      alert("All form data has been reset.");
+    }
+
+    function submitData() {
+      const isAllFilled = allEntries.every(entry => Object.keys(entry).length > 0 && entry.rooms && entry.rooms.length > 0);
+      if (!isAllFilled) {
+        const invalidIndex = allEntries.findIndex(entry => Object.keys(entry).length === 0 || !entry.rooms || entry.rooms.length === 0);
+        if (invalidIndex !== -1) {
+          currentFormIndex = invalidIndex;
+          renderForm(invalidIndex);
+          updateNavigationButtons();
+          saveCurrentForm();
+        }
+        alert("Please fill in all inputs correctly, including at least one room per input.");
+        return;
+      }
+
+      let lines = [];
+      allEntries.forEach(entry => {
+        entry.rooms.forEach(room => {
+          const line = `${entry.date}#${room}!${entry.paper}@${entry.year}%${entry.subject}^${entry.stype}$${entry.separation}`;
+          lines.push(line);
+        });
+      });
+
+      const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+      const formData = new FormData();
+      formData.append("file", blob, "input.txt");
+
+      fetch("/", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.text())
+      .then(html => {
+        document.open();
+        document.write(html);
+        document.close();
+        alert("Allotment generated successfully.");
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        alert("Error generating allotment. Please try again.");
+      });
+    }
+
+    function getRoomSuggestions(index) {
+      const payload = {
+        date: document.querySelector(`.date${index}`).value,
+        paperName: document.querySelector(`.paper${index}`).value,
+        year: document.querySelector(`.year${index}`).value,
+        subject: document.querySelector(`.subject${index}`).value,
+        subjectType: document.querySelector(`.stype${index}`).value,
+        separation: document.querySelector(`.separation${index}`).value
+      };
+
+      if (!payload.date || !payload.paperName || !payload.year || !payload.subject || !payload.subjectType || !payload.separation) {
+        document.getElementById(`roomSuggestions${index}`).innerHTML = "";
+        return;
+      }
+
+      fetch("/roomSuggestion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        const resultsDiv = document.getElementById(`roomSuggestions${index}`);
+        if (data.error) {
+          resultsDiv.innerHTML = `<p style="color: var(--error-color)">${data.error}</p>`;
+        } else {
+          const availableRooms = getAvailableRooms(index);
+          const suggestedRooms = data.rooms.filter(r => availableRooms.includes(r.RoomId));
+          resultsDiv.innerHTML = `<h5>Suggested Rooms:</h5><ul class="list-unstyled">` +
+            suggestedRooms.map(r => `<li>Room ${r.RoomId} (Capacity: ${r.totalCapacity})</li>`).join("") +
+            `</ul>`;
+        }
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        document.getElementById(`roomSuggestions${index}`).innerHTML = `<p style="color: var(--error-color)">Error fetching suggestions</p>`;
+      });
+    }
   </script>
 </body>
 </html>
