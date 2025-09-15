@@ -1,0 +1,3 @@
+- [ ] Remove localStorage.getItem for loading saved theme on page load in DOMContentLoaded
+- [ ] Remove localStorage.setItem for saving theme on toggle in toggleTheme function
+- [ ] Verify img src are /static/img/light.png and /static/img/dark.png

@@ -9,13 +9,12 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
   <style>
     :root {
       --primary-color: #4a90e2;
       --secondary-color: #2d3748;
       --accent-color: #ffffff;
-      --background-color: linear-gradient(135deg, #e1c08d, #e97a19);
+      --background-color: linear-gradient(135deg, #fef3e2, #f9d9b8);
       --card-background: #ffffff;
       --text-color: #2d3748;
       --error-color: #ef4444;
@@ -38,7 +37,7 @@
       --input-background: #6b7280;
       --button-text-color: #f8fafc;
       --form-label-color: #ffffff;
-      
+      --header-footer-color: #f4a261;
     }
 
     * {
@@ -59,7 +58,6 @@
       min-height: 100vh;
     }
 
-
     .header {
       text-align: center;
       margin-bottom: 1rem;
@@ -71,11 +69,11 @@
     }
 
     h2 {
-      font-size: 2rem;
+      font-size: 1.75rem;
     }
 
     h3 {
-      font-size: 1.75rem;
+      font-size: 1.25rem;
     }
 
     .theme-toggle {
@@ -120,9 +118,10 @@
       transform: translateX(26px);
     }
 
-    .theme-toggle .material-icons {
+    .theme-toggle img {
+      width: 24px;
+      height: 24px;
       margin-left: 0.5rem;
-      font-size: 1.4rem;
       transition: var(--transition);
     }
 
@@ -145,7 +144,6 @@
     .form-container {
       background: var(--card-background);
       padding: 1rem;
-      color: #6b7280;
       border-radius: var(--border-radius);
       box-shadow: var(--shadow);
       max-width: 1200px;
@@ -170,6 +168,23 @@
       transition: var(--transition);
       background: var(--input-background);
       color: var(--text-color);
+    }
+
+    select {
+      position: relative;
+      overflow: hidden;
+      animation: slideDown 0.5s ease-out forwards;
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-10px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
 
     input:focus, select:focus {
@@ -441,13 +456,6 @@
       justify-content: center;
     }
 
-    .room-suggestions {
-      margin-top: 0.5rem;
-      font-size: 0.875rem;
-      color: var(--text-color);
-      font-family: 'Roboto Mono', monospace;
-    }
-
     .item-list {
       margin-top: 1rem;
     }
@@ -582,11 +590,26 @@
     footer {
       background-color: var(--header-footer-color);
       color: var(--accent-color);
-      text-align: center;
-      padding: 0.75rem;
+      padding: 1.5rem 2rem;
       margin-top: auto;
       width: 100%;
-      border-top: 2px solid var(--primary-color);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    footer img {
+      width: 100px;
+      height: auto;
+    }
+
+    footer h1 {
+      color: var(--accent-color);
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0;
     }
 
     footer p {
@@ -604,12 +627,12 @@
         font-size: 1.5rem;
       }
 
-      .site-header img {
-        width: 50px;
+      footer img {
+        width: 70px;
       }
 
-      .site-header h1 {
-        font-size: 1.25rem;
+      footer h1 {
+        font-size: 1.5rem;
       }
 
       .theme-toggle {
@@ -640,15 +663,14 @@
   </style>
 </head>
 <body>
-
   <div class="theme-toggle">
     <input type="checkbox" id="themeSwitch" onchange="toggleTheme()">
     <label for="themeSwitch" class="theme-toggle-label"></label>
-    <span class="material-icons dark-mode-icon">dark_mode</span>
-    <span class="material-icons light-mode-icon">light_mode</span>
+    <img src="/static/img/dark.png" alt="Dark Mode" class="dark-mode-icon">
+    <img src="/static/img/light.png" alt="Light Mode" class="light-mode-icon">
   </div>
   <div class="header">
-    <h1>Seat Allotment System</h1>
+    <h2>Seat Allotment System</h2>
   </div>
 
   <!-- Ask how many inputs -->
@@ -699,6 +721,8 @@
   <div class="custom-calendar" id="calendar" role="dialog" aria-label="Date picker"></div>
 
   <footer>
+    <img src="/static/img/logo.png" alt="Institution Logo" />
+    <h1>Ramakrishna Mission Vidyamandira</h1>
     <p>&copy; 2025 Ramakrishna Mission Vidyamandira. All Rights Reserved.</p>
   </footer>
 
@@ -741,14 +765,12 @@
       const body = document.body;
       const currentTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       body.setAttribute('data-theme', currentTheme);
-      localStorage.setItem('theme', currentTheme);
       document.getElementById('themeSwitch').checked = currentTheme === 'dark';
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      const savedTheme = localStorage.getItem('theme') || 'light';
-      document.body.setAttribute('data-theme', savedTheme);
-      document.getElementById('themeSwitch').checked = savedTheme === 'dark';
+      document.body.setAttribute('data-theme', 'light');
+      document.getElementById('themeSwitch').checked = false;
       addEnterKeyListeners();
     });
 
@@ -781,7 +803,7 @@
           const currentIndex = fields.indexOf(currentField);
           if (currentIndex === -1) return;
 
-          if (validateField(currentField)) {
+          if (currentField.classList.contains(`room${index}`) || validateField(currentField)) {
             const nextIndex = currentIndex + 1;
             if (nextIndex < fields.length) {
               fields[nextIndex].focus();
@@ -927,13 +949,12 @@
         </select>
         <div class="warning separationWarn">Please select a valid separation</div>
         <label for="room${index}" class="mt-2">Room Number:</label>
-        <select class="form-control room${index}" id="room${index}" required>
+        <select class="form-control room${index}" id="room${index}">
           <option value="" disabled selected>-- Select Room --</option>
           ${availableRooms.map(room => `<option value="${room}">${room}</option>`).join('')}
         </select>
         <div class="warning roomWarn">Please select at least one valid room</div>
         <div class="selected-rooms-container" id="selectedRooms${index}"></div>
-        <div class="room-suggestions" id="roomSuggestions${index}"></div>
       `;
       inputsContainer.appendChild(div);
 
@@ -962,7 +983,10 @@
       // Attach listeners
       document.querySelector(`.date${index}`).addEventListener('change', () => getRoomSuggestions(index));
       document.querySelector(`.paper${index}`).addEventListener('input', () => getRoomSuggestions(index));
-      document.querySelector(`.year${index}`).addEventListener('change', () => getRoomSuggestions(index));
+      document.querySelector(`.year${index}`).addEventListener('change', () => {
+        handleYearChange(index);
+        getRoomSuggestions(index);
+      });
       document.querySelector(`.subject${index}`).addEventListener('change', () => getRoomSuggestions(index));
       document.querySelector(`.stype${index}`).addEventListener('change', () => getRoomSuggestions(index));
       document.querySelector(`.separation${index}`).addEventListener('change', () => getRoomSuggestions(index));
@@ -970,9 +994,14 @@
         if (e.target.value) {
           addRoom(index, e.target.value);
           e.target.value = '';
-          renderForm(index);
+          updateRoomSelect(index);
+          updateSelectedRooms(index, allEntries[index].rooms);
+          getRoomSuggestions(index);
         }
       });
+
+      // Fetch initial room suggestions
+      getRoomSuggestions(index);
     }
 
     function handleYearChange(index) {
@@ -1007,16 +1036,23 @@
       }
       if (!allEntries[index].rooms.includes(room)) {
         allEntries[index].rooms.push(room);
-        updateSelectedRooms(index, allEntries[index].rooms);
-        getRoomSuggestions(index);
       }
     }
 
     function removeRoom(index, room) {
       allEntries[index].rooms = allEntries[index].rooms.filter(r => r !== room);
       updateSelectedRooms(index, allEntries[index].rooms);
-      renderForm(index);
+      updateRoomSelect(index);
       getRoomSuggestions(index);
+    }
+
+    function updateRoomSelect(index, suggestedRooms = null) {
+      const roomSelect = document.querySelector(`.room${index}`);
+      const availableRooms = suggestedRooms || getAvailableRooms(index);
+      roomSelect.innerHTML = `
+        <option value="" disabled selected>-- Select Room --</option>
+        ${availableRooms.map(room => `<option value="${room}">${room}</option>`).join('')}
+      `;
     }
 
     function updateSelectedRooms(index, rooms) {
@@ -1052,8 +1088,7 @@
         { element: document.querySelector(`.year${index}`), warn: 'Please select a valid year' },
         { element: document.querySelector(`.subject${index}`), warn: 'Please select a valid subject' },
         { element: document.querySelector(`.stype${index}`), warn: 'Please select a valid subject type' },
-        { element: document.querySelector(`.separation${index}`), warn: 'Please select a valid separation' },
-        { element: document.querySelector(`.room${index}`), warn: 'Please select at least one valid room' }
+        { element: document.querySelector(`.separation${index}`), warn: 'Please select a valid separation' }
       ];
       fields.forEach(field => {
         if (!validateField(field.element, true)) {
@@ -1061,11 +1096,12 @@
         }
       });
 
+      const roomWarn = document.querySelector(`.room${index}`).parentElement.querySelector(".roomWarn");
       if (rooms.length === 0) {
-        const roomSelect = document.querySelector(`.room${index}`);
-        roomSelect.classList.add("error");
-        roomSelect.parentElement.querySelector(".roomWarn").style.display = "block";
+        roomWarn.style.display = "block";
         valid = false;
+      } else {
+        roomWarn.style.display = "none";
       }
 
       if (!valid) {
@@ -1284,8 +1320,7 @@
           { element: document.querySelector(`.year${index}`), warn: 'Please select a valid year' },
           { element: document.querySelector(`.subject${index}`), warn: 'Please select a valid subject' },
           { element: document.querySelector(`.stype${index}`), warn: 'Please select a valid subject type' },
-          { element: document.querySelector(`.separation${index}`), warn: 'Please select a valid separation' },
-          { element: document.querySelector(`.room${index}`), warn: 'Please select at least one valid room' }
+          { element: document.querySelector(`.separation${index}`), warn: 'Please select a valid separation' }
         ];
         fields.forEach(field => {
           if (!validateField(field.element, true)) {
@@ -1293,11 +1328,12 @@
           }
         });
 
+        const roomWarn = document.querySelector(`.room${index}`).parentElement.querySelector(".roomWarn");
         if (rooms.length === 0) {
-          const roomSelect = document.querySelector(`.room${index}`);
-          roomSelect.classList.add("error");
-          roomSelect.parentElement.querySelector(".roomWarn").style.display = "block";
+          roomWarn.style.display = "block";
           valid = false;
+        } else {
+          roomWarn.style.display = "none";
         }
 
         if (!valid) {
@@ -1414,7 +1450,7 @@
       };
 
       if (!payload.date || !payload.paperName || !payload.year || !payload.subject || !payload.subjectType || !payload.separation) {
-        document.getElementById(`roomSuggestions${index}`).innerHTML = "";
+        updateRoomSelect(index); // Reset to available rooms if inputs are incomplete
         return;
       }
 
@@ -1425,21 +1461,28 @@
       })
       .then(response => response.json())
       .then(data => {
-        const resultsDiv = document.getElementById(`roomSuggestions${index}`);
         if (data.error) {
-          resultsDiv.innerHTML = `<p style="color: var(--error-color)">${data.error}</p>`;
+          updateRoomSelect(index); // Reset to available rooms on error
         } else {
           const availableRooms = getAvailableRooms(index);
-          const suggestedRooms = data.rooms.filter(r => availableRooms.includes(r.RoomId));
-          resultsDiv.innerHTML = `<h5>Suggested Rooms:</h5><ul class="list-unstyled">` +
-            suggestedRooms.map(r => `<li>Room ${r.RoomId} (Capacity: ${r.totalCapacity})</li>`).join("") +
-            `</ul>`;
+          const suggestedRooms = data.rooms
+            .filter(r => availableRooms.includes(r.RoomId))
+            .map(r => r.RoomId);
+          updateRoomSelect(index, suggestedRooms.length > 0 ? suggestedRooms : availableRooms);
         }
       })
       .catch(err => {
         console.error("Error:", err);
-        document.getElementById(`roomSuggestions${index}`).innerHTML = `<p style="color: var(--error-color)">Error fetching suggestions</p>`;
+        updateRoomSelect(index); // Reset to available rooms on fetch error
       });
+    }
+
+    function prevForm() {
+      if (currentFormIndex > 0) {
+        currentFormIndex--;
+        renderForm(currentFormIndex);
+        updateNavigationButtons();
+      }
     }
   </script>
 </body>
