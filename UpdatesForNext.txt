@@ -1,4 +1,0 @@
-for SARA-3.0:
-
-1.  login page for better sequrity
-2.  dynamically upload student data for those who are transfered to another institution 
