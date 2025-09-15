@@ -382,7 +382,7 @@ def export_pdf(pdf_path, totalRooms):
     doc.build(elements)
 
 
-# ------------------ Routes ------------------                                    working for SARA-2.0
+# ------------------ Routes ------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":

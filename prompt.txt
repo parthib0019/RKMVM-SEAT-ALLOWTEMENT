@@ -1,0 +1,15 @@
+can you impliment those updates:
+1. see in my html script after fulling up the fields: Date, Paper Name, Year, Subject, Subject Type, Separation it will sent all the data
+to the servers end point "/roomSuggestion" and the endpoint return something along with a list of rooms but the script(js) is not useing and showing the suggestion
+at the dorp down of Room Number(s): in the dorp down.
+can you make it for me?
+
+2. also make the js like that if the total capacity of those chosen rooms are greater that equals to (4*total students)[if separation is 1]
+ and (9*total students)[if separation = 2], then the user can submit or it will show him error.
+
+3. one more thing that the server is sending the data of total student so if also maintain the data of all all rooms in a same date of it is full then don't show it in the next input section.
+
+4. the paper Name of two section can not be same.
+
+5. if for a input{i} a roll numbe is selected and he is assigned a seat then the same roll number is not possible to be taken at the same date for the next input.
+
