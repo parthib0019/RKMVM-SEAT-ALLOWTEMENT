@@ -133,9 +133,6 @@ def room_suggestion():
 
 # ------------------ Database Helper ------------------
 def get_rolls_by_subject(year, subject, subject_type):
-    
-
-    print("fetching rolls")
     rolls = []
     conn = pymysql.connect(
         host="localhost", user="root", password="", database="ExamSeatAllowtment"
@@ -405,13 +402,9 @@ def index():
                 continue
             date, room, paper, year, subject, subject_type, separation = parse_line(line)
             rooms = room.split(",")
-            print(line)                                                                    #########################
-            rolls = get_rolls_by_subject(year, SubjectDictionary[subject], subject_type)
-            print(rolls)
-            
+            rolls = get_rolls_by_subject(year, SubjectDictionary[subject], subject_type)      
             
             while rolls and rooms:
-                print(f"rolls: {rolls},\nrooms: {rooms}")
                 room_key = f"{rooms[0]}_{date.replace('/', '-')}"
 
                 if room_key in totalRooms:
