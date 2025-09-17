@@ -239,6 +239,9 @@
     <div class="calendar" id="calendar"></div>
   </div>
 
+
+
+  
   <script>
     const inputsContainer = document.getElementById("inputsContainer");
     const calendar = document.getElementById("calendar");
@@ -249,6 +252,8 @@
 
     let inputRolls = {};       // rolls per input
     let roomCapacities = {};   // { roomId: totalCapacity }
+    // let roomUsage = {};     // COMMENTED OUT: not tracking usage
+    // let reservedNeeded = {}; // COMMENTED OUT
 
     // ---------------- Multi-select ----------------
     function setupMultiSelect(containerId) {
@@ -294,12 +299,12 @@
         const div = document.createElement("div");
         div.classList.add("form-section");
         div.innerHTML = `
-          <h3>Exam Session ${i + 1}</h3>
+          <h3>Input ${i + 1}</h3>
           <div class="error-message" id="error${i}"></div>
           <label>Date:</label>
           <input type="text" class="date${i}" placeholder="dd/mm/yyyy" readonly onclick="showCalendar(this)">
           <label>Paper Name:</label>
-          <input type="text" class="paper${i}" placeholder="Enter paper name">
+          <input type="text" class="paper${i}" placeholder="enter the name of the paper">
           <label>Year:</label>
           <select class="year${i}">
             <option value="UG-1">UG-1</option>
@@ -332,13 +337,13 @@
             <option value="Minor">Minor</option>
             <option value="General">General</option>
           </select>
-          <label>Seat Separation:</label>
+          <label>Separation:</label>
           <select class="separation${i}">
-            <option value="1">1 seat apart</option>
-            <option value="2">2 seats apart</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
           </select>
-          <div class="student-count studentCount${i}"></div>
-          <label>Select Room(s):</label>
+          <span class="studentCount${i}" style="margin-left:10px; color:#007BFF;"></span>
+          <label>Room Number(s):</label>
           <div class="multi-select" id="roomSelect${i}">
             <div class="selected-rooms"></div>
             <select class="room-options">
@@ -397,6 +402,7 @@
                 roomCapacities[r.RoomId] = r.totalCapacity;
                 roomSelect.appendChild(opt);
               });
+              // updateRemainingCapacities(); // COMMENTED OUT
             }
           })
           .catch(() => {
@@ -539,6 +545,7 @@
       }
       return true;
     }
-  </script>
+    </script>
+
 </body>
 </html>
