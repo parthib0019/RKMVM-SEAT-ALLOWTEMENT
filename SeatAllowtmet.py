@@ -377,8 +377,6 @@ def export_pdf(pdf_path, totalRooms):
         elements.append(PageBreak())
 
     doc.build(elements)
-
-
 # ------------------ Routes ------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
