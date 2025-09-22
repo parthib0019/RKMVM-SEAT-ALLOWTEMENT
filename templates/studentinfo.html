@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S.A.S | Student Info Upload</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" />
+  <style>
+    :root {
+      --primary-color: #4a90e2;
+      --secondary-color: #64748b;
+      --accent-color: #fff;
+      --error-color: #dc2626;
+      --header-footer-color: rgba(255,255,255,0.18);
+      --card-background: rgba(255,255,255,0.85);
+      --border-radius: 16px;
+      --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+      --transition: all 0.2s cubic-bezier(.4,0,.2,1);
+    }
+    body {
+      font-family: 'Roboto Mono', monospace;
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(120deg, #e0e7ef 0%, #f8fafc 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .main-container {
+  background: radial-gradient(circle at 60% 40%, rgba(74,144,226,0.13) 0%, rgba(255,255,255,0.85) 70%), var(--card-background);
+      margin-top: 40px;
+      padding: 2.5rem 2.5rem 2.5rem 2.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 95vw;
+      max-width: 700px;
+      position: relative;
+      z-index: 1;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-size: 2.2rem;
+      letter-spacing: 2px;
+      color: var(--primary-color);
+      text-align: center;
+      font-weight: 700;
+    }
+    .upload-area {
+      outline: none;
+  border: 2.5px dashed #2563eb;
+      border-radius: 1.5rem;
+      background: linear-gradient(135deg, rgba(37,99,235,0.13) 0%, rgba(37,99,235,0.09) 100%), rgba(255,255,255,0.18);
+      width: 100%;
+      max-width: 480px;
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #334155;
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+      transition: box-shadow 0.3s, border-color 0.3s, background 0.3s;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 8px 32px 0 rgba(37,99,235,0.10), 0 1.5px 8px 0 rgba(37,99,235,0.08);
+      overflow: hidden;
+      margin-left: auto;
+      margin-right: auto;
+      backdrop-filter: blur(8px);
+      background-clip: padding-box;
+    }
+    .upload-area:focus {
+      box-shadow: 0 0 0 3px #2563eb55, 0 8px 32px 0 rgba(37,99,235,0.10);
+      border-color: #2563eb;
+    }
+
+    .upload-area.dragover {
+      border-color: #1e40af;
+      background: linear-gradient(135deg, rgba(37,99,235,0.18) 0%, rgba(37,99,235,0.13) 100%), rgba(255,255,255,0.22);
+      box-shadow: 0 0 16px 6px rgba(37,99,235,0.18), 0 0 0 4px rgba(37,99,235,0.10);
+      animation: blue-glow 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes blue-glow {
+      from {
+        box-shadow: 0 0 16px 6px rgba(37,99,235,0.18), 0 0 0 4px rgba(37,99,235,0.10);
+      }
+      to {
+        box-shadow: 0 0 32px 12px rgba(37,99,235,0.28), 0 0 0 8px rgba(37,99,235,0.13);
+      }
+    }
+    .upload-area input[type="file"] {
+      display: none;
+    }
+    .upload-icon {
+      font-size: 2.7rem;
+      color: #2563eb;
+      margin-bottom: 0.5rem;
+      filter: drop-shadow(0 0 8px rgba(37,99,235,0.18));
+    }
+    .upload-area .filename {
+      margin-top: 0.5rem;
+      color: #2563eb;
+      font-size: 1rem;
+      word-break: break-all;
+    }
+    .submit-btn {
+      background: var(--primary-color);
+      color: var(--accent-color);
+      border: none;
+      border-radius: var(--border-radius);
+      padding: 0.7rem 2rem;
+      font-size: 1.1rem;
+      font-family: 'Roboto Mono', monospace;
+      font-weight: 700;
+      transition: var(--transition);
+      margin-top: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(74, 144, 226, 0.08);
+    }
+    .submit-btn:disabled {
+      background: #b6c6e3;
+      color: #fff;
+      cursor: not-allowed;
+    }
+    .submit-btn:hover:not(:disabled) {
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+      transform: translateY(-2px);
+    }
+    .status-message {
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: var(--primary-color);
+      text-align: center;
+    }
+    .status-message.error {
+      color: var(--error-color);
+    }
+    @media (max-width: 700px) {
+      .main-container {
+        padding: 1rem;
+        max-width: 99vw;
+      }
+      .upload-area {
+        max-width: 98vw;
+        min-height: 120px;
+        padding: 1.5rem 0.5rem;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <h1>Student Data Upload</h1>
+    <form id="uploadForm" enctype="multipart/form-data" method="POST" action="/upload_student_excel">
+      <label for="fileInput" class="upload-area" id="dropArea" tabindex="0" aria-label="Upload Excel file by clicking or dragging here">
+        <span class="upload-icon">&#8682;</span>
+        <span>Drop Excel file here or click to browse</span>
+        <input type="file" id="fileInput" name="file" accept=".xlsx,.xls">
+        <span class="filename" id="filename"></span>
+      </label>
+      <div class="helper-text" style="text-align:center;color:#2563ebb0;font-size:0.98rem;margin-bottom:1.2rem;">
+        Accepted file types: <b>.xlsx, .xls</b> | Max size: 5MB
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn" disabled>Upload</button>
+      <div class="status-message" id="statusMsg"></div>
+    </form>
+  </div>
+  <script>
+    const dropArea = document.getElementById('dropArea');
+    const fileInput = document.getElementById('fileInput');
+    const filenameSpan = document.getElementById('filename');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusMsg = document.getElementById('statusMsg');
+    let selectedFile = null;
+
+    dropArea.addEventListener('click', (e) => {
+      // Only trigger file dialog if the click is not on the file input itself
+      if (e.target === fileInput) return;
+      fileInput.click();
+    });
+    dropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropArea.classList.add('dragover');
+    });
+    dropArea.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropArea.classList.remove('dragover');
+    });
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropArea.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        fileInput.files = e.dataTransfer.files;
+        handleFileChange();
+      }
+    });
+    fileInput.addEventListener('change', handleFileChange);
+
+    function handleFileChange() {
+      if (fileInput.files && fileInput.files[0]) {
+        selectedFile = fileInput.files[0];
+        filenameSpan.textContent = selectedFile.name;
+        submitBtn.disabled = false;
+        statusMsg.textContent = '';
+      } else {
+        filenameSpan.textContent = '';
+        submitBtn.disabled = true;
+      }
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (!selectedFile) return;
+      submitBtn.disabled = true;
+      statusMsg.textContent = 'Uploading...';
+      statusMsg.classList.remove('error');
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      fetch('/upload_student_excel', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          statusMsg.textContent = 'Upload successful!';
+          statusMsg.classList.remove('error');
+        } else {
+          statusMsg.textContent = data.error || 'Upload failed.';
+          statusMsg.classList.add('error');
+        }
+        submitBtn.disabled = false;
+      })
+      .catch(() => {
+        statusMsg.textContent = 'Upload failed.';
+        statusMsg.classList.add('error');
+        submitBtn.disabled = false;
+      });
+    });
+  </script>
+</body>
+</html>
