@@ -4,143 +4,373 @@
   <meta charset="UTF-8">
   <title>Seat Allocation Input</title>
   <style>
+    :root {
+      /* Light mode colors */
+      --background-color-light: #f4f4f9;
+      --text-color-light: #1c1c1c;
+      --card-background-light: #ffffff;
+      --accent-color: #FFB347;
+      --button-hover-light: #e69c3a;
+      --border-color-light: #ddd;
+    }
+    .dark-mode {
+      /* Dark mode colors */
+      --background-color-light: #121212;
+      --text-color-light: #f0f0f0;
+      --card-background-light: #1e1e1e;
+      --accent-color: #FFB347;
+      --button-hover-light: #e69c3a;
+      --border-color-light: #333;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #f9f9f9;
-      padding: 20px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--background-color-light);
+      color: var(--text-color-light);
+      padding: 0;
+      margin: 0;
+      transition: background 0.5s, color 0.5s;
     }
-    h2 {
-      text-align: center;
-      color: #333;
-    }
-    .form-section {
-      background: #fff;
-      border-radius: 8px;
-      padding: 15px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input, select {
-      width: 250px;
-      padding: 8px;
-      margin-top: 5px;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 6px;
-      background: #007BFF;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .calendar {
-      display: none;
-      position: absolute;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      z-index: 10;
-    }
-    .calendar-header {
+    
+    .transparent-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      width: 100%;
+      height: 70px; /* Adjust height as needed */
       display: flex;
       justify-content: space-between;
-      margin-bottom: 10px;
+      align-items: center;
+      
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      transition: background 0.5s, border-bottom 0.5s;
     }
-    .days {
-      display: grid;
-      grid-template-columns: repeat(7, 30px);
-      gap: 5px;
-      text-align: center;
+    .dark-mode .transparent-header {
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
-    .day {
+    .transparent-header img {
+      height: 50px; /* Adjust logo size */
+    }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-container .nav-buttons button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 50px;
+      background: var(--card-background-light);
+      color: var(--text-color-light);
       cursor: pointer;
-      padding: 5px;
-      border-radius: 4px;
+      font-weight: bold;
+      font-size: 1rem;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
-    .day:hover {
-      background: #007BFF;
-      color: #fff;
+
+    .dark-mode .nav-container .nav-buttons button {
+      background: #2c2c2c;
+      color: #f0f0f0;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
+
+    .nav-container .nav-buttons button:hover {
+      background: var(--button-hover-light);
+      color: #121212;
+      box-shadow: 0 0 15px var(--accent-color);
+      transform: translateY(-2px);
+    }
+    .nav-container .nav-buttons button.active {
+      background: var(--accent-color);
+      color: #121212;
+    }
+
+    .mode-toggle {
+      width: 45px;
+      height: 45px;
+      border: none;
+      border-radius: 50%;
+      background: var(--card-background-light);
+      color: var(--text-color-light);
+      cursor: pointer;
+      font-size: 1.5rem;
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .dark-mode .mode-toggle {
+      background: #2c2c2c;
+      color: #f0f0f0;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .mode-toggle:hover {
+      background: var(--accent-color);
+      color: #121212;
+      transform: scale(1.1);
+      box-shadow: 0 0 15px var(--accent-color);
+    }
+    
+    .main-container {
+      background: var(--background-color-light);
+      padding: 20px 0;
+      min-height: calc(100vh - 70px);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .card-container {
+      max-width: 800px;
+      width: 90%;
+      margin: 40px auto;
+      padding: 20px;
+      background: var(--card-background-light);
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      transition: all 0.5s;
+    }
+    .dark-mode .card-container {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      letter-spacing: 1.5px;
+      color: var(--text-color-light);
+    }
+
+    .form-section {
+      background: var(--card-background-light);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      transition: all 0.5s;
+      border: 1px solid var(--border-color-light);
+    }
+    .dark-mode .form-section {
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: 600;
+      color: var(--text-color-light);
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 12px 15px;
+      margin-top: 8px;
+      background: var(--background-color-light);
+      color: var(--text-color-light);
+      border: 1px solid var(--border-color-light);
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 5px var(--accent-color);
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .action-buttons button {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 50px;
+      background: var(--accent-color);
+      color: #121212;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    .action-buttons button:hover {
+      background: var(--button-hover-light);
+      box-shadow: 0 0 15px var(--accent-color);
+      transform: translateY(-2px);
+    }
+
     .multi-select {
       display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      padding: 5px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      background: #fff;
-      max-width: 220px;
+      flex-direction: column;
+      gap: 10px;
+      padding: 15px;
+      border: 1px solid var(--border-color-light);
+      border-radius: 8px;
+      background: var(--background-color-light);
+      max-width: 100%;
+      margin-top: 8px;
+      transition: all 0.3s;
     }
 
     .multi-select .selected-rooms {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 8px;
+      min-height: 40px;
     }
 
     .tag {
-      background: #007BFF;
-      color: white;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 0.85rem;
+      background: var(--accent-color);
+      color: #121212;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 8px;
+      transition: all 0.3s;
     }
-
+    
     .tag .remove {
       cursor: pointer;
       font-weight: bold;
+      opacity: 0.7;
+    }
+    .tag .remove:hover {
+      opacity: 1;
+    }
+    
+    .calendar {
+      display: none;
+      position: absolute;
+      background: var(--card-background-light);
+      border: 1px solid var(--border-color-light);
+      border-radius: 8px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      z-index: 2000;
+      padding: 15px;
+    }
+    .dark-mode .calendar {
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+    }
+    
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .calendar-header span {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    .calendar-header button {
+      background: none;
+      border: none;
+      color: var(--text-color-light);
+      font-size: 1.5rem;
+      cursor: pointer;
     }
 
+    .calendar .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      text-align: center;
+    }
+    .calendar .day {
+      padding: 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .calendar .day:hover {
+      background: var(--accent-color);
+      color: #121212;
+    }
   </style>
 </head>
 <body>
-  <h2>Seat Allocation Input</h2>
 
-  <!-- Ask how many inputs -->
-  <div class="form-section">
-    <label for="numInputs">How many inputs?</label>
-    <input type="number" id="numInputs" min="1" value="1">
-    <button onclick="generateForms()">Generate</button>
+  <header class="transparent-header">
+    <div class="nav-container">
+      <img src="{{ url_for('static', filename='img/rasa1.png') }}" alt="Left Logo">
+      <div class="nav-buttons">
+        <a href="/"><button class="active">Seat Allocation</button></a>
+        <a href="/Studentinfo"><button>Student Information</button></a>
+        <a href="/Roominfo"><button>Room Information</button></a>
+      </div>
+    </div>
+    <div class="nav-container">
+      <button class="mode-toggle" id="modeToggle">☀️</button>
+      <img src="{{ url_for('static', filename='img/logo.png') }}" style="padding:10px" alt="Right Logo">
+    </div>
+  </header>
+
+  <div class="main-container">
+    <main class="card-container">
+      <h2>Seat Allocation Input</h2>
+
+      <div class="form-section">
+        <label for="numInputs">Number of Exam Papers</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="number" id="numInputs" min="1" value="1" style="width: 150px;">
+          <button class="action-buttons" onclick="generateForms()" style="    text-align: center;
+                                                                              align-items: center;
+                                                                              color: black;
+                                                                              border: none;
+                                                                              border-radius: 10px;
+                                                                              background-color: #ffb347;">Generate</button>
+        </div>
+      </div>
+
+      <form id="mainForm" method="POST" enctype="multipart/form-data" action="/">
+        <div id="inputsContainer"></div>
+        <div class="action-buttons">
+          <button type="button" onclick="submitData()">Submit Data</button>
+        </div>
+      </form>
+    </main>
   </div>
 
-  <!-- Dynamic forms -->
-  <form id="mainForm" method="POST" enctype="multipart/form-data" action="/">
-    <div id="inputsContainer"></div>
-    <button type="button" onclick="submitData()">Submit</button>
-  </form>
-
-  <!-- Popup calendar -->
   <div class="calendar" id="calendar"></div>
-
-
-
-
 
   <script>
     const inputsContainer = document.getElementById("inputsContainer");
     const calendar = document.getElementById("calendar");
+    const modeToggle = document.getElementById("modeToggle");
+    const body = document.body;
     let activeInput = null;
     let currentDate = new Date();
     const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     const dayNames = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
-    let inputRolls = {};       // rolls per input
-    let roomCapacities = {};   // { roomId: totalCapacity }
-    // let roomUsage = {};     // COMMENTED OUT: not tracking usage
-    // let reservedNeeded = {}; // COMMENTED OUT
+    let inputRolls = {};
+    let roomCapacities = {};
+    
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      body.classList.add(savedTheme);
+      modeToggle.innerHTML = savedTheme === 'dark-mode' ? '🌙' : '☀️';
+    }
+
+    // Event listener for the mode toggle button
+    modeToggle.addEventListener('click', () => {
+      body.classList.toggle('dark-mode');
+      const currentTheme = body.classList.contains('dark-mode') ? 'dark-mode' : '';
+      localStorage.setItem('theme', currentTheme);
+      modeToggle.innerHTML = currentTheme === 'dark-mode' ? '🌙' : '☀️';
+    });
 
     // ---------------- Multi-select ----------------
     function setupMultiSelect(containerId) {
@@ -155,7 +385,6 @@
         const opt = select.options[select.selectedIndex];
         const capacity = opt.getAttribute("data-capacity") || "";
 
-        // Avoid duplicates
         if (selectedContainer.querySelector(`[data-room="${value}"]`)) {
           select.value = "";
           return;
@@ -168,12 +397,11 @@
         tag.innerHTML = `${value} (Cap: ${capacity}) <span class="remove">❌</span>`;
         selectedContainer.appendChild(tag);
 
-        // Remove handler
         tag.querySelector(".remove").addEventListener("click", () => {
           tag.remove();
         });
 
-        select.value = ""; // reset dropdown
+        select.value = "";
       });
     }
 
@@ -186,12 +414,12 @@
         const div = document.createElement("div");
         div.classList.add("form-section");
         div.innerHTML = `
-          <h3>Input ${i + 1}</h3>
+          <h3>Paper ${i + 1} Details</h3>
           <div class="error-message" id="error${i}"></div>
           <label>Date:</label>
           <input type="text" class="date${i}" placeholder="dd/mm/yyyy" readonly onclick="showCalendar(this)">
           <label>Paper Name:</label>
-          <input type="text" class="paper${i}" placeholder="enter the name of the paper">
+          <input type="text" class="paper${i}" placeholder="e.g. PH-UG1-101">
           <label>Year:</label>
           <select class="year${i}">
             <option value="UG-1">UG-1</option>
@@ -229,7 +457,7 @@
             <option value="1">1</option>
             <option value="2">2</option>
           </select>
-          <span class="studentCount${i}" style="margin-left:10px; color:#007BFF;"></span>
+          <span class="studentCount${i}" style="display:block; margin-top:10px; font-weight:bold; color:var(--accent-color);"></span>
           <label>Room Number(s):</label>
           <div class="multi-select" id="roomSelect${i}">
             <div class="selected-rooms"></div>
@@ -239,10 +467,7 @@
           </div>
         `;
         inputsContainer.appendChild(div);
-
-        // Setup multi-select
         setupMultiSelect(`roomSelect${i}`);
-
         const yearSel = div.querySelector(`.year${i}`);
         const subjectSel = div.querySelector(`.subject${i}`);
         const stypeSel = div.querySelector(`.stype${i}`);
@@ -261,7 +486,6 @@
             subjectType: stypeSel.value,
             separation: separationSel.value
           };
-
           fetch("/roomSuggestion", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -274,11 +498,7 @@
             } else {
               studentCountSpan.textContent = data.error ? data.error : "";
             }
-
-            // Store rolls for conflict detection
             inputRolls[i] = data.rolls || [];
-
-            // Populate rooms (with capacity only)
             roomSelect.innerHTML = "<option value=''>--Select Room--</option>";
             if (data.rooms && data.rooms.length > 0) {
               data.rooms.forEach(r => {
@@ -289,14 +509,12 @@
                 roomCapacities[r.RoomId] = r.totalCapacity;
                 roomSelect.appendChild(opt);
               });
-              // updateRemainingCapacities(); // COMMENTED OUT
             }
           })
           .catch(() => {
             studentCountSpan.textContent = "Error fetching data";
           });
         }
-
         yearSel.addEventListener("change", fetchRoomSuggestions);
         subjectSel.addEventListener("change", fetchRoomSuggestions);
         stypeSel.addEventListener("change", fetchRoomSuggestions);
@@ -305,14 +523,16 @@
         dateInput.addEventListener("blur", fetchRoomSuggestions);
       }
     }
-
+    
     // ---------------- Calendar ----------------
     function showCalendar(input) {
       activeInput = input;
       renderCalendar(currentDate);
       const rect = input.getBoundingClientRect();
-      calendar.style.top = (window.scrollY + rect.bottom + 5) + "px";
-      calendar.style.left = (rect.left) + "px";
+      const topOffset = window.scrollY + rect.bottom + 5;
+      const leftOffset = rect.left;
+      calendar.style.top = topOffset + "px";
+      calendar.style.left = leftOffset + "px";
       calendar.style.display = "block";
     }
 
@@ -363,12 +583,10 @@
     // ---------------- Submit ----------------
     function submitData() {
       if (!validateBeforeSubmit()) {
-        return; // stop if validation fails
+        return;
       }
-
       const n = document.getElementById("numInputs").value;
       let lines = [];
-
       for (let i = 0; i < n; i++) {
         const date = document.querySelector(`.date${i}`).value.trim();
         const paper = document.querySelector(`.paper${i}`).value.trim();
@@ -376,12 +594,9 @@
         const subject = document.querySelector(`.subject${i}`).value.trim();
         const stype = document.querySelector(`.stype${i}`).value.trim();
         const separation = document.querySelector(`.separation${i}`).value.trim();
-
-        // Collect room IDs from selected tags
         const selectedRooms = document.querySelectorAll(`#roomSelect${i} .selected-rooms span`);
         let roomList = [];
         selectedRooms.forEach(tag => roomList.push(tag.getAttribute("data-room")));
-
         if (!date || !roomList.length || !paper || !year || !subject || !stype || !separation) continue;
         const line = `${date}#${roomList.join(",")}!${paper}@${year}%${subject}^${stype}$${separation}`;
         lines.push(line);
@@ -411,7 +626,6 @@
       const n = document.getElementById("numInputs").value;
       const papers = new Set();
       const allRolls = new Set();
-
       for (let i = 0; i < n; i++) {
         const paper = document.querySelector(`.paper${i}`).value.trim();
         if (papers.has(paper)) {
@@ -419,8 +633,6 @@
           return false;
         }
         papers.add(paper);
-
-        // check roll overlaps
         const rolls = inputRolls[i] || [];
         for (let r of rolls) {
           if (allRolls.has(r)) {
@@ -432,10 +644,6 @@
       }
       return true;
     }
-    </script>
-
-
-
-  
+  </script>
 </body>
 </html>

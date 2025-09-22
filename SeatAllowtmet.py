@@ -28,6 +28,9 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["OUTPUT_FOLDER"] = OUTPUT_FOLDER
 
+
+
+
 # ------------------ Input Parsing ------------------
 def parse_line(line: str):
     """
@@ -53,6 +56,8 @@ def parse_line(line: str):
         subject_type_part.strip().lower(),
         separetion.strip()
     )
+    
+
 #room_suggestion
 
 @app.route("/roomSuggestion", methods=["POST"])
@@ -62,6 +67,7 @@ def room_suggestion():
         year = data.get("year", "")
         subject = data.get("subject", "")
         subject_type = data.get("subjectType", "")
+        
 
         SubjectDictionary = {
             "PHYSA": "Physics", "CHMA": "Chemistry", "MTMA": "Mathematics",
@@ -104,6 +110,7 @@ def room_suggestion():
             ]["Roll Number"].tolist()
 
         total_students = len(rolls)
+        print(total_students)
 
         cur.execute("SELECT RoomId, TotalCapacity FROM RoomInfo")
         rooms = cur.fetchall()
@@ -377,6 +384,165 @@ def export_pdf(pdf_path, totalRooms):
         elements.append(PageBreak())
 
     doc.build(elements)
+
+
+# ✅ Show all rooms
+@app.route("/Roominfo", methods=["GET", "POST"])
+def Roominfo():
+    conn = pymysql.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="ExamSeatAllowtment",
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    cursor = conn.cursor()
+
+    if request.method == "POST":
+        # Add or update room
+        room_id = request.form.get("RoomId")
+        capacity = request.form.get("TotalCapacity")
+        benches = request.form.get("BenchPerCol")
+
+        if not room_id or not capacity or not benches:
+            return "❌ Missing fields", 400
+
+        # Check if room already exists
+        cursor.execute("SELECT * FROM RoomInfo WHERE RoomId=%s", (room_id,))
+        existing = cursor.fetchone()
+
+        if existing:
+            # Update room
+            cursor.execute(
+                "UPDATE RoomInfo SET TotalCapacity=%s, BenchPerCol=%s WHERE RoomId=%s",
+                (capacity, benches, room_id),
+            )
+        else:
+            # Insert new room
+            cursor.execute(
+                "INSERT INTO RoomInfo (RoomId, TotalCapacity, BenchPerCol) VALUES (%s, %s, %s)",
+                (room_id, capacity, benches),
+            )
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return redirect("/Roominfo")
+
+    # GET method → fetch all rooms
+    cursor.execute("SELECT * FROM RoomInfo")
+    result = cursor.fetchall()
+    print(type(result))
+    print(result)
+    cursor.close()
+    conn.close()
+
+    return render_template("roominfo.html", data=result)
+
+# ✅ Delete a room
+@app.route("/Roominfo/delete", methods=["POST"])
+def delete_room():
+    data = request.get_json()
+    room_id = data.get("RoomId")
+
+    if not room_id:
+        return jsonify({"error": "RoomId is required"}), 400
+
+    conn = pymysql.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="ExamSeatAllowtment",
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM RoomInfo WHERE RoomId=%s", (room_id,))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+    return jsonify({"success": True, "RoomId": room_id})
+
+
+
+#Student table mannager
+
+@app.route("/Studentinfo", methods=["POST", "GET"])
+def Studentinfo():
+    if request.method == "POST":
+        institute = "RAMAKRISHNA MISSION VIDYAMANDIRA"
+        year = request.form.get("Year")
+        file = request.files.get("StudentDataFile")
+
+        if not file:
+            flash("No file uploaded")
+            return redirect("/Studentinfo")
+
+        file_data = file.read()  # Excel file as binary (BLOB)
+
+        conn = pymysql.connect(
+            host="localhost", user="root", password="", database="ExamSeatAllowtment"
+        )
+        cursor = conn.cursor()
+
+        # UPSERT logic → update if exists, else insert
+        query = """
+            INSERT INTO StudentInfo (InstituteName, Year, student_data)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                InstituteName = VALUES(InstituteName),
+                student_data = VALUES(student_data)
+        """
+        cursor.execute(query, (institute, year, file_data))
+        conn.commit()
+        conn.close()
+
+        flash("Student info added/updated successfully")
+        return redirect("/Studentinfo")
+    
+    # GET request → fetch all rows
+    conn = pymysql.connect(
+        host="localhost", user="root", password="", database="ExamSeatAllowtment"
+    )
+    cursor = conn.cursor()
+
+    query = "SELECT * FROM StudentInfo"
+    cursor.execute(query)
+    results = cursor.fetchall()  # fetch ALL rows
+    
+    # Get column names dynamically
+    columns = [desc[0] for desc in cursor.description]
+
+    conn.close()
+
+    return render_template("studentinfo.html", data=results, columns=columns)
+
+
+#student row deletion
+@app.route("/Studentinfo/delete", methods=["POST"])
+def delete_studentinfo():
+    try:
+        data = request.get_json()
+        year = data.get("Year")
+
+        if not year:
+            return jsonify({"error": "Year is required"}), 400
+
+        conn = pymysql.connect(
+            host="localhost", user="root", password="", database="ExamSeatAllowtment"
+        )
+        cursor = conn.cursor()
+
+        query = "DELETE FROM StudentInfo WHERE Year = %s"
+        cursor.execute(query, (year,))
+        conn.commit()
+        conn.close()
+
+        return jsonify({"success": True, "message": f"Record for Year {year} deleted successfully"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 
 # ------------------ Routes ------------------
