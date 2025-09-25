@@ -6,7 +6,6 @@
   <title>S.A.S | Room Info</title>
   <style>
     :root {
-      /* Light mode colors */
       --background-color-light: #f4f4f9;
       --text-color-light: #1c1c1c;
       --card-background-light: #ffffff;
@@ -15,7 +14,6 @@
       --border-color-light: #ddd;
     }
     .dark-mode {
-      /* Dark mode colors */
       --background-color-light: #121212;
       --text-color-light: #f0f0f0;
       --card-background-light: #1e1e1e;
@@ -31,6 +29,9 @@
       padding: 0;
       margin: 0;
       transition: background 0.5s, color 0.5s;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
     
     .transparent-header {
@@ -38,7 +39,7 @@
       top: 0;
       z-index: 1000;
       width: 100%;
-      height: 70px; /* Adjust height as needed */
+      height: 70px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -52,7 +53,7 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
     .transparent-header img {
-      height: 50px; /* Adjust logo size */
+      height: 50px;
     }
 
     .nav-container {
@@ -133,13 +134,15 @@
       border-radius: 15px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
       transition: all 0.5s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .dark-mode .card-container {
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     }
 
     h2 {
-      text-align: center;
       margin-bottom: 30px;
       font-size: 2.5rem;
       letter-spacing: 1.5px;
@@ -148,14 +151,16 @@
 
     table {
       width: 100%;
+      max-width: 800px;
       border-collapse: collapse;
       margin-top: 20px;
     }
     th, td {
       border: 1px solid var(--border-color-light);
       padding: 12px;
-      text-align: left;
+      text-align: center;
       transition: background 0.3s, color 0.3s;
+      vertical-align: middle;
     }
     th {
       background-color: var(--background-color-light);
@@ -185,7 +190,7 @@
 
     .delete-button {
       padding: 8px 15px;
-      background: #dc2626; /* A distinct color for delete actions */
+      background: #dc2626;
       color: #fff;
       border: none;
       border-radius: 5px;
@@ -214,13 +219,14 @@
       transform: translateY(-1px);
     }
 
-    /* Popup modal */
     .modal {
       display: none;
       position: fixed;
       z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
       background: rgba(0,0,0,0.5);
       backdrop-filter: blur(5px);
       display: flex;
@@ -232,8 +238,12 @@
       padding: 30px;
       border-radius: 10px;
       width: 450px;
+      max-width: 90%;
       box-shadow: 0px 5px 20px rgba(0,0,0,0.2);
       position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .close {
       position: absolute;
@@ -243,9 +253,19 @@
       cursor: pointer;
       color: var(--text-color-light);
     }
-    label { display: block; margin-top: 15px; font-weight: 600; }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+      text-align: left;
+      width: 100%;
+      max-width: 300px;
+    }
     input[type="text"], input[type="number"] {
-      width: 95%; padding: 10px; margin-top: 8px;
+      width: 100%;
+      max-width: 300px;
+      padding: 10px;
+      margin-top: 8px;
       border-radius: 5px;
       border: 1px solid var(--border-color-light);
       background: var(--background-color-light);
@@ -272,7 +292,7 @@
 
   <header class="transparent-header">
     <div class="nav-container">
-      <img src="{{ url_for('static', filename='img/rasa1.png') }}" alt="Left Logo">
+      <img src="/static/img/rasa1.png" alt="Left Logo">
       <div class="nav-buttons">
         <a href="/"><button>Seat Allocation</button></a>
         <a href="/Studentinfo"><button>Student Information</button></a>
@@ -281,8 +301,7 @@
     </div>
     <div class="nav-container">
       <button class="mode-toggle" id="modeToggle">☀️</button>
-      <img src="{{ url_for('static', filename='img/logo.png') }}" style="padding:10px" alt="Right Logo">
-      
+      <img src="/static/img/logo.png" style="padding:10px" alt="Right Logo">
     </div>
   </header>
 
@@ -297,22 +316,40 @@
       <table id="roomsTable">
         <thead>
           <tr>
-            <th>RoomId</th>
+            <th>Institute Name</th>
+            <th>Room Name/No.</th>
             <th>Total Capacity</th>
-            <th>BenchPerCol</th>
+            <th>BenchPerCol.</th>
             <th>Edit</th>
             <th>Delete</th>
           </tr>
         </thead>
         <tbody>
-          {% for row in data %}
-          <tr>
-            <td>{{ row['RoomId'] }}</td>
-            <td>{{ row['TotalCapacity'] }}</td>
-            <td>{{ row['BenchPerCol'] }}</td>
-            <td><button class="action-button" onclick="openModal('{{ row['RoomId'] }}','{{ row['TotalCapacity'] }}','{{ row['BenchPerCol'] }}')">Edit</button></td>
-            <td><button class="delete-button" onclick="deleteRow('{{ row['RoomId'] }}')">Delete</button></td>
-          </tr>
+          {% set grouped_data = [] %}
+          {% for row in data | sort(attribute='RoomId') %}
+            {% set parts = row['RoomId'].split('-') %}
+            {% set institute_name = parts[0] if parts | length > 1 else 'Ramkrishna Mission Vidyamandira' %}
+            {% set room_id = parts[-1] %}
+            {% set group = grouped_data | selectattr('institute_name', 'equalto', institute_name) | list %}
+            {% if group %}
+              {% set _ = group[0]['rows'].append({'RoomId': room_id, 'TotalCapacity': row['TotalCapacity'], 'BenchPerCol': row['BenchPerCol'], 'FullRoomId': row['RoomId']}) %}
+            {% else %}
+              {% set _ = grouped_data.append({'institute_name': institute_name, 'rows': [{'RoomId': room_id, 'TotalCapacity': row['TotalCapacity'], 'BenchPerCol': row['BenchPerCol'], 'FullRoomId': row['RoomId']}]}) %}
+            {% endif %}
+          {% endfor %}
+          {% for group in grouped_data %}
+            {% for row in group.rows %}
+              <tr>
+                {% if loop.first %}
+                  <td rowspan="{{ group.rows | length }}">{{ group.institute_name }}</td>
+                {% endif %}
+                <td>{{ row.RoomId }}</td>
+                <td>{{ row.TotalCapacity }}</td>
+                <td>{{ row.BenchPerCol }}</td>
+                <td><button class="action-button" onclick="openModal('{{ row.FullRoomId }}','{{ row.TotalCapacity }}','{{ row.BenchPerCol }}')">Edit</button></td>
+                <td><button class="delete-button" onclick="deleteRow('{{ row.FullRoomId }}')">Delete</button></td>
+              </tr>
+            {% endfor %}
           {% endfor %}
         </tbody>
       </table>
@@ -324,22 +361,16 @@
       <span class="close" onclick="closeModal()">&times;</span>
       <h3 id="modalTitle">Add Room</h3>
       <form method="POST" action="/Roominfo">
+        <label>Institute Name</label>
+        <input type="text" name="InstituteName" id="instituteName" required>
         <label>Room Name</label>
         <input type="text" name="RoomId" id="roomName" required>
-        
         <label>Capacity</label>
-        <input type="number" name="TotalCapacity" id="capacity" required>
-        
+        <input type="number" name="TotalCapacity" id="capacity" min="1" required>
         <label>Benches per Col</label>
         <input type="text" name="BenchPerCol" id="benches" pattern="[0-9]+(,[0-9]+)*" 
                title="Enter numbers separated by commas, e.g. 12,12,15" required>
-        
-        <button type="submit" id="submitBtn" style="background-color: #ff9500;
-    align-items: center;
-    border: none;
-    border-radius: 10px;
-    height: 1cm;
-    width: 2cm;">Add</button>
+        <input type="submit" id="submitBtn" value="Add">
       </form>
     </div>
   </div>
@@ -347,6 +378,7 @@
   <script>
     const modal = document.getElementById("roomModal");
     const modalTitle = document.getElementById("modalTitle");
+    const instituteNameInput = document.getElementById("instituteName");
     const roomNameInput = document.getElementById("roomName");
     const capacityInput = document.getElementById("capacity");
     const benchesInput = document.getElementById("benches");
@@ -372,16 +404,21 @@
 
     document.getElementById("addBtn").onclick = () => {
       modalTitle.textContent = "Add Room";
-      submitBtn.textContent = "Add";
+      submitBtn.value = "Add";
+      instituteNameInput.value = "";
       roomNameInput.value = "";
       capacityInput.value = "";
       benchesInput.value = "";
       modal.style.display = "flex";
     };
 
-    function openModal(roomId, capacity, benches) {
+    function openModal(fullRoomId, capacity, benches) {
       modalTitle.textContent = "Edit Room";
-      submitBtn.textContent = "Save";
+      submitBtn.value = "Save";
+      const parts = fullRoomId.split('-');
+      const instituteName = parts.length > 1 ? parts[0] : 'RKMVM';
+      const roomId = parts[parts.length - 1];
+      instituteNameInput.value = instituteName;
       roomNameInput.value = roomId;
       capacityInput.value = capacity;
       benchesInput.value = benches;
@@ -392,12 +429,12 @@
       modal.style.display = "none";
     }
 
-    function deleteRow(roomId) {
-      if (confirm("Are you sure you want to delete room " + roomId + "?")) {
+    function deleteRow(fullRoomId) {
+      if (confirm("Are you sure you want to delete room " + fullRoomId + "?")) {
         fetch("/Roominfo/delete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ RoomId: roomId })
+          body: JSON.stringify({ RoomId: fullRoomId })
         }).then(() => location.reload());
       }
     }
