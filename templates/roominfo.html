@@ -332,9 +332,9 @@
             {% set room_id = parts[-1] %}
             {% set group = grouped_data | selectattr('institute_name', 'equalto', institute_name) | list %}
             {% if group %}
-              {% set _ = group[0]['rows'].append({'RoomId': room_id, 'TotalCapacity': row['TotalCapacity'], 'BenchPerCol': row['BenchPerCol'], 'FullRoomId': row['RoomId']}) %}
+              {% set _ = group[0]['rows'].append({'RoomId': room_id, 'TotalCapacity': row['totalCapacity'], 'BenchPerCol': row['BenchPerCol'], 'FullRoomId': row['RoomId']}) %}
             {% else %}
-              {% set _ = grouped_data.append({'institute_name': institute_name, 'rows': [{'RoomId': room_id, 'TotalCapacity': row['TotalCapacity'], 'BenchPerCol': row['BenchPerCol'], 'FullRoomId': row['RoomId']}]}) %}
+              {% set _ = grouped_data.append({'institute_name': institute_name, 'rows': [{'RoomId': room_id, 'TotalCapacity': row['totalCapacity'], 'BenchPerCol': row['BenchPerCol'], 'FullRoomId': row['RoomId']}]}) %}
             {% endif %}
           {% endfor %}
           {% for group in grouped_data %}
