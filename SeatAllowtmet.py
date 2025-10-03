@@ -117,14 +117,20 @@ def room_suggestion():
         cur.close()
         conn.close()
 
-        suitable_rooms = [
-            {"RoomId": r[0], "totalCapacity": r[1]}
-            for r in rooms if r[1] >= total_students * 4
-        ]
+
+        # Commenting out the code for selective room suggestion
+        # suitable_rooms = [
+        #     {"RoomId": r[0], "totalCapacity": r[1]}
+        #     for r in rooms if r[1] >= total_students * 4
+        # ]
 
         # If no suitable room, return all rooms
-        if not suitable_rooms:
-            suitable_rooms = [
+        # if not suitable_rooms:
+        #     suitable_rooms = [
+        #         {"RoomId": r[0], "totalCapacity": r[1]}
+        #         for r in rooms
+        #     ]
+        suitable_rooms = [
                 {"RoomId": r[0], "totalCapacity": r[1]}
                 for r in rooms
             ]
@@ -132,7 +138,6 @@ def room_suggestion():
         return jsonify({
             "rolls": rolls,
             "total_students": total_students,
-            "rooms": suitable_rooms
         })
 
     except Exception as e:
@@ -593,8 +598,36 @@ def index():
         pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], "All_Seating_Allotments.pdf")
         export_pdf(pdf_path, totalRooms)
         return render_template("pdf-viewer.html", pdf_files=["All_Seating_Allotments.pdf"])
+    conn = pymysql.connect(
+            host="localhost", user="root", password="", database="ExamSeatAllowtment"
+        )
+    cur = conn.cursor()
+    cur.execute("SELECT RoomId, TotalCapacity FROM RoomInfo")
+    rooms = cur.fetchall()
+    cur.close()
+    conn.close()
 
-    return render_template("index.html")
+
+    # Commenting out the code for selective room suggestion
+    # suitable_rooms = [
+    #     {"RoomId": r[0], "totalCapacity": r[1]}
+    #     for r in rooms if r[1] >= total_students * 4
+    # ]
+
+    # If no suitable room, return all rooms
+    # if not suitable_rooms:
+    #     suitable_rooms = [
+    #         {"RoomId": r[0], "totalCapacity": r[1]}
+    #         for r in rooms
+    #     ]
+    suitable_rooms = [
+            {"RoomId": r[0], "totalCapacity": r[1]}
+            for r in rooms
+        ]
+    print(suitable_rooms)
+
+
+    return render_template("index.html", rooms=suitable_rooms)
 
 @app.route("/download/<filename>")
 def download_file(filename):
