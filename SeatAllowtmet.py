@@ -3,7 +3,12 @@ import io
 import random as rnd
 import pymysql
 import openpyxl
-from flask import Flask, request, redirect, flash, render_template, send_from_directory
+#connecting to sqlite for offline use
+import sqlite3
+from database import get_db_connection, init_db
+import io
+#----------------------------------------
+from flask import Flask, request, redirect, flash, render_template, send_from_directory, jsonify, g, send_file
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from reportlab.lib.pagesizes import A4

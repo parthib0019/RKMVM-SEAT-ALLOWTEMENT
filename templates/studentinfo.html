@@ -286,19 +286,15 @@
                 </tr>
                 {% for row in data %}
                     <tr>
-                        {% for item in row %}
-                            <td>
-                                {% if loop.index == 3 %}
-                                    {% if item %}
-                                        [BLOB DATA]
-                                    {% else %}
-                                        Empty
-                                    {% endif %}
-                                {% else %}
-                                    {{ item }}
-                                {% endif %}
-                            </td>
-                        {% endfor %}
+                        <td>
+                            {{ row['InstituteName'] }}
+                        </td>
+                        <td>
+                            {{ row['Year'] }}
+                        </td>
+                        <td>
+                            [BLOB DATA]
+                        </td>
                         <td>
                             <button class="action-button" onclick="openModal('{{ row[0] }}', '{{ row[1] }}')">Edit / Add</button>
                         </td>
