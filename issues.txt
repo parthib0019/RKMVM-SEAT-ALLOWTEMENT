@@ -19,4 +19,21 @@ i> hosting ii>login fxn so that multiple can log in and  work iii> interactive c
 <iv>who logged in and generated what and if it is authorised by HA. 
 
 <v> test on maximum cap+all dept {annual exams}
-<vi>
+<vi> porblem in electron .js
+PS C:\Users\PARTHIB\Desktop> npm init electron-app@latest sara-desktop-app
+
+> npx
+> create-electron-app sara-desktop-app
+
+
+
+An unhandled rejection has occurred inside Forge:
+Error: ENOENT: no such file or directory, scandir 'C:\Users\PARTHIB\Desktop\sara-desktop-app'
+at async Object.readdir (node:internal/fs/promises:957:18)
+    at async _Task.task [as taskFn] (C:\Users\PARTHIB\AppData\Local\npm-cache\_npx\35c48adf706267bc\node_modules\@electron-forge\cli\dist\electron-forge-init.js:47:22)
+    at async _Task.run (C:\Users\PARTHIB\AppData\Local\npm-cache\_npx\35c48adf706267bc\node_modules\listr2\dist\index.cjs:2063:11)
+npm error code 1
+npm error path C:\Users\PARTHIB\Desktop
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c create-electron-app sara-desktop-app
+npm error A complete log of this run can be found in: C:\Users\PARTHIB\AppData\Local\npm-cache\_logs\2025-10-06T09_19_34_663Z-debug-0.log

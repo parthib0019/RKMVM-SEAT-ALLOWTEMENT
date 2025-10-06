@@ -11,6 +11,8 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from io import BytesIO
+from flaskwebgui import FlaskUI
+import platform
 
 # --- Custom Database Imports ---
 from database import get_db_connection, init_db
@@ -325,6 +327,25 @@ def download_file(filename):
     return send_from_directory(app.config['OUTPUT_FOLDER'], filename, as_attachment=True)
 
 # ------------------ Run ------------------
-if __name__ == "__main__":
-    app.run(debug=True)
+def start_flask(**kwargs):
+    app.run(**kwargs)
 
+# This is the new main entry point for the desktop app
+if __name__ == "__main__":
+    
+    browser_path = None
+    # If on Linux, you may need to specify the browser path explicitly
+    if platform.system() == "Linux":
+        # Edit this path to the location of your Chrome/Chromium executable
+        # Common paths: '/usr/bin/google-chrome-stable', '/usr/bin/chromium-browser'
+        browser_path = "/snap/bin/brave"
+    icon_path = "static/img/rasa1.png"
+    FlaskUI(
+        server=start_flask,
+        server_kwargs={"host": "127.0.0.1", "port": 5000},
+        app="flask",
+        width=1000,
+        fullscreen=False,
+        height=600,
+        browser_path=browser_path, # This tells the app where to find the browser
+    ).run()
