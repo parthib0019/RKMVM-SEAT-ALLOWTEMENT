@@ -3,8 +3,7 @@
  False,
  False,
  True,
- 'E:\\Workspace\\Backend '
- 'system(python)\\MainEnvs(Windows)\\Lib\\site-packages\\PyInstaller\\bootloader\\images\\icon-windowed.ico',
+ ['E:\\Workspace\\MY projects\\RKMVM-SEAT-ALLOWTEMENT\\static/img/rasa1.png'],
  None,
  False,
  False,
@@ -84,7 +83,7 @@
  [],
  False,
  False,
- 1759780988,
+ 1759916387,
  [('runw.exe',
    'E:\\Workspace\\Backend '
    'system(python)\\MainEnvs(Windows)\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
