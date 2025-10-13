@@ -2,6 +2,8 @@ import os
 import io
 import random as rnd
 import openpyxl
+from openpyxl.styles import Font, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 import pandas as pd
 from flask import Flask, request, redirect, flash, render_template, g, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
@@ -188,35 +190,85 @@ def allocate_seats(seat_matrix, rolls, paper, year, sep, subject):
     return seat_matrix, rolls
 
 def export_pdf(pdf_path, totalRooms):
-    doc = SimpleDocTemplate(pdf_path, pagesize=A4); elements = []; styles = getSampleStyleSheet()
+    doc = SimpleDocTemplate(pdf_path, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Constants for cell sizes
     SEAT_WIDTH, GUTTER_WIDTH, ROW_HEIGHT, ROW_NUM_WIDTH = 80, 15, 25, 25
+
     for room, (seat_matrix, date) in totalRooms.items():
+        # --- Header ---
         room_display = room.split("_")[0]
-        header_text = f"<b>RAMAKRISHNA MISSION VIDYAMANDIRA</b><br/>Howrah, Belur: 711202<br/><br/><b>Date:</b> {date} &nbsp;&nbsp;&nbsp; <b>Room:</b> {room_display}<br/>"
-        elements.append(Paragraph(header_text, styles["Title"])); elements.append(Spacer(1, 12))
-        max_rows = max(len(col) for col in seat_matrix); data = []
+        header_text = (
+            "<b>RAMAKRISHNA MISSION VIDYAMANDIRA</b><br/>"
+            "Howrah, Belur: 711202<br/><br/>"
+            f"<b>Date:</b> {date} &nbsp;&nbsp;&nbsp; <b>Room:</b> {room_display}<br/>"
+        )
+        elements.append(Paragraph(header_text, styles["Title"]))
+        elements.append(Spacer(1, 12))
+
+        # --- Build seat grid ---
+        if not seat_matrix or not any(seat_matrix):
+            elements.append(PageBreak())
+            continue
+            
+        max_rows = max(len(col) for col in seat_matrix if col)
+        data = []
+
         for r in range(max_rows):
-            row_data = [str(r + 1)]
-            for c in range(len(seat_matrix)):
-                if c > 0 and c % 2 == 0: row_data.append("   ")
-                if r < len(seat_matrix[c]):
-                    seat = seat_matrix[c][r]
-                    if seat == "e": row_data.append("")
-                    elif seat is None: row_data.append(None)
-                    else: roll, paper, yr, subject = seat; row_data.append(f"{roll}\n{subject}-{yr}")
-                else: row_data.append(None)
+            row_data = [str(r + 1)] # Row number
+            for c, col in enumerate(seat_matrix):
+                # Insert gutter after every 2 seat-columns
+                if c > 0 and c % 2 == 0:
+                    row_data.append("   ")
+
+                if r < len(col):
+                    seat = col[r]
+                    if seat == "e":
+                        row_data.append("")  
+                    elif seat is None:
+                        row_data.append(None)
+                    else:
+                        roll, paper, yr, subject = seat
+                        row_data.append(f"{roll}\n{subject}-{yr}")
+                else:
+                    row_data.append(None)
             data.append(row_data)
-        num_cols = len(data[0]); colWidths = [ROW_NUM_WIDTH]
-        for c in range(1, num_cols): colWidths.append(GUTTER_WIDTH if all(row[c] == "   " or row[c] is None for row in data) else SEAT_WIDTH)
+
+        # --- Create custom colWidths ---
+        num_cols = len(data[0])
+        colWidths = [ROW_NUM_WIDTH]
+        for c in range(1, num_cols):
+            is_gutter = all(row[c] == "   " or row[c] is None for row in data)
+            colWidths.append(GUTTER_WIDTH if is_gutter else SEAT_WIDTH)
+
         table = Table(data, colWidths=colWidths, rowHeights=[ROW_HEIGHT] * len(data))
+
+        # --- Styling (Strictly Black & White) ---
         style_commands = []
         for r, row in enumerate(data):
             for c, cell in enumerate(row):
-                if c == 0 or cell is None or cell == "   ": style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
-                else: style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
-        style_commands.extend([("ALIGN", (0, 0), (-1, -1), "CENTER"), ("VALIGN", (0, 0), (-1, -1), "MIDDLE")])
-        table.setStyle(TableStyle(style_commands)); elements.append(table); elements.append(PageBreak())
+                # Only apply borders to cells with student data
+                if c == 0 or cell is None or cell == "   " or cell == "":
+                    # No border for row numbers, empty cells, or gutters
+                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
+                else:
+                    # Black grid for student cells
+                    style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
+        
+        # Center alignment for all cells
+        style_commands.extend([
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE")
+        ])
+        table.setStyle(TableStyle(style_commands))
+
+        elements.append(table)
+        elements.append(PageBreak())
+
     doc.build(elements)
+
 
 # --- CRUD Routes (Updated to SQLite) ---
 
