@@ -2,7 +2,6 @@ import os
 import io
 import random as rnd
 import openpyxl
-import sqlite3
 import pandas as pd
 from flask import Flask, request, redirect, flash, render_template, g, jsonify, send_from_directory
 from werkzeug.utils import secure_filename

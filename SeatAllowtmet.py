@@ -3,6 +3,8 @@ import io
 import random as rnd
 import pymysql
 import openpyxl
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+from openpyxl.utils import get_column_letter
 #connecting to sqlite for offline use
 import sqlite3
 from database import get_db_connection, init_db
@@ -17,6 +19,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 import pandas as pd
 from io import BytesIO
+from typing import Dict, List, Tuple, Any
 from flask import jsonify
 
 # ------------------ Flask Setup ------------------
