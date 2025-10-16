@@ -333,6 +333,10 @@ def delete_studentinfo_route():
     conn.commit()
     return jsonify({"success": True, "message": f"Record for Year {year} deleted."})
 
+@app.route("/developers")
+def developers():
+    return render_template("devteam.html")
+
 # --- Main Allocation Route ---
 @app.route("/", methods=["GET", "POST"])
 def index():
