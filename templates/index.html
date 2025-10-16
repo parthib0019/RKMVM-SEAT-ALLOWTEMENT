@@ -253,6 +253,10 @@
       roomSelect.disabled = false;
       let theRooms =AllocatedRooms.find(entry => entry.date === dateInput.value);
       if (AllocatedRooms.length > 0 && theRooms) {
+        const opt = document.createElement("option");
+        opt.value = '';
+        opt.textContent = `-- Select Room --`;
+        roomSelect.appendChild(opt);
       
       theRooms.rooms.forEach(r => {
         const opt = document.createElement("option");
@@ -262,6 +266,10 @@
         roomSelect.appendChild(opt);
       });
       } else {
+        const opt = document.createElement("option");
+        opt.value = '';
+        opt.textContent = `-- Select Room --`;
+        roomSelect.appendChild(opt);
       allAvailableRooms.forEach(r => {
         const opt = document.createElement("option");
         opt.value = r.RoomId;
@@ -271,7 +279,7 @@
       });
       }
     }
-    // Listen for date changes to re-populate room options
+    // Listen for date changes to re-populate room options      <           Very necessary part         >
     dateInput.addEventListener('change', function () {
       // Clear current options and tags
       roomSelect.innerHTML = "";
@@ -290,7 +298,10 @@
       roomSelect.disabled = false;
       let theRooms =AllocatedRooms.find(entry => entry.date === dateInput.value);
       if (AllocatedRooms.length > 0 && theRooms) {
-      
+        const opt = document.createElement("option");
+        opt.value = '';
+        opt.textContent = `-- Select Room --`;
+        roomSelect.appendChild(opt);
       theRooms.rooms.forEach(r => {
         const opt = document.createElement("option");
         opt.value = r.roomId;
@@ -299,6 +310,10 @@
         roomSelect.appendChild(opt);
       });
       } else {
+        const opt = document.createElement("option");
+        opt.value = '';
+        opt.textContent = `-- Select Room --`;
+        roomSelect.appendChild(opt);
       allAvailableRooms.forEach(r => {
         const opt = document.createElement("option");
         opt.value = r.RoomId;
