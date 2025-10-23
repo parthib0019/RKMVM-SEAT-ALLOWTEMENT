@@ -528,7 +528,7 @@ def Studentinfo():
     columns = [desc[0] for desc in cursor.description]
 
     conn.close()
-
+    
     return render_template("studentinfo.html", data=results, columns=columns)
 
 
@@ -632,7 +632,6 @@ def index():
             {"RoomId": r[0], "totalCapacity": r[1]}
             for r in rooms
         ]
-    print(suitable_rooms)
 
 
     return render_template("index.html", rooms=suitable_rooms)
