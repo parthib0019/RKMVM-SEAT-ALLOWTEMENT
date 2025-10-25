@@ -641,6 +641,10 @@ def index():
 def download_file(filename):
     return send_from_directory(app.config['OUTPUT_FOLDER'], filename, as_attachment=True)
 
+@app.route("/developers")
+def developers():
+    return render_template("devteam.html")
+
 # ------------------ Run ------------------
 if __name__ == "__main__":
     app.run(debug=True)
