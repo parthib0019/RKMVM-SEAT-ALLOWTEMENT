@@ -528,7 +528,7 @@ def Studentinfo():
     columns = [desc[0] for desc in cursor.description]
 
     conn.close()
-    
+
     return render_template("studentinfo.html", data=results, columns=columns)
 
 
@@ -632,6 +632,7 @@ def index():
             {"RoomId": r[0], "totalCapacity": r[1]}
             for r in rooms
         ]
+    print(suitable_rooms)
 
 
     return render_template("index.html", rooms=suitable_rooms)
@@ -639,6 +640,10 @@ def index():
 @app.route("/download/<filename>")
 def download_file(filename):
     return send_from_directory(app.config['OUTPUT_FOLDER'], filename, as_attachment=True)
+
+@app.route("/developers")
+def developers():
+    return render_template("devteam.html")
 
 # ------------------ Run ------------------
 if __name__ == "__main__":

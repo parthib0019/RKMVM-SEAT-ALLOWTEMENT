@@ -237,7 +237,7 @@
       <span class="footer-text">Ramkrishna Mission Vidyamandira</span>
     </div>
     <div class="footer-bottom">
-      <b>© 2025 Ramakrishna Mission Vidyamandira Computer Science Department. All Rights Reserved. | <a href="devteam.html">Dev Team</a></b>
+      <b>© 2025 Ramakrishna Mission Vidyamandira Computer Science Department. All Rights Reserved. | <a href="/developers">Dev Team</a></b>
     </div>
   </footer>
 
@@ -303,7 +303,7 @@
     const div = document.createElement("div");
     div.classList.add("form-section");
     const buttonText = isEditing ? "Save Changes" : (currentPaperIndex === totalPapers - 1) ? "Finish & Review" : "Save & Next Paper";
-    const headerText = isEditing ? `Editing Paper ${i + 1} of ${total}` : `Paper ${allPapersData.length + 1} of ${total} Details`;
+    const headerText = isEditing ? `Editing Paper ${i + 1} of ${total}` : `Paper ${i + 1} of ${total} Details`;
     div.innerHTML = `
       <h3>${headerText}</h3>
       <label>Date:</label>
@@ -335,7 +335,7 @@
       <label>Room Number(s):</label>
       <div class="multi-select" id="roomSelectCurrent">
         <div class="selected-rooms"></div>
-        <select class="room-options"><option value="">--Select Room--</option></select>
+        <select class="room-options"><option value="">--Select Room/s--</option></select>
       </div>
       <button class="action-button" style="margin-top: 25px;" onclick="handleNextClick()">${buttonText}</button>
       ${removedPapers.length > 0 ? '<button class="action-button" style="margin-top: 10px;" onclick="undoRemove()">Undo Remove</button>' : ''}
@@ -389,7 +389,7 @@
         theRooms.rooms.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r.roomId;
-          opt.textContent = `${r.roomId} (Capacity: ${r.TotalCapacity || r.capacity})`;
+          opt.textContent = `${r.roomId}`;
           opt.setAttribute("data-capacity", r.TotalCapacity || r.capacity);
           roomSelect.appendChild(opt);
         });
@@ -397,7 +397,7 @@
         allAvailableRooms.forEach(r => {
           const opt = document.createElement("option");
           opt.value = r.RoomId;
-          opt.textContent = `${r.RoomId} (Capacity: ${r.TotalCapacity || r.totalCapacity})`;
+          opt.textContent = `${r.RoomId}`;
           opt.setAttribute("data-capacity", r.TotalCapacity || r.totalCapacity);
           roomSelect.appendChild(opt);
         });
@@ -421,7 +421,7 @@
           theRooms.rooms.forEach(r => {
             const opt = document.createElement("option");
             opt.value = r.roomId;
-            opt.textContent = `${r.roomId} (Capacity: ${r.TotalCapacity || r.capacity})`;
+            opt.textContent = `${r.roomId}`;
             opt.setAttribute("data-capacity", r.TotalCapacity || r.capacity);
             roomSelect.appendChild(opt);
           });
@@ -429,7 +429,7 @@
           allAvailableRooms.forEach(r => {
             const opt = document.createElement("option");
             opt.value = r.RoomId;
-            opt.textContent = `${r.RoomId} (Capacity: ${r.TotalCapacity || r.totalCapacity})`;
+            opt.textContent = `${r.RoomId}`;
             opt.setAttribute("data-capacity", r.TotalCapacity || r.totalCapacity);
             roomSelect.appendChild(opt);
           });
@@ -450,6 +450,8 @@
   function removeTag(event, element) {
     event.stopPropagation();
     const tag = element.parentElement;
+    const roomId = tag.getAttribute("data-room");
+    removedPapers.push({ roomId: roomId, parent: tag.parentElement });
     tag.remove();
   }
 
@@ -512,7 +514,7 @@
   function showFinalSummary() {
     console.log("\n", AllocatedRooms, "\n  ------------------------");
     let html = `<button class="action-button" onclick="submitData()">Generate Final Allocation</button>`;
-    if (removedPapers.length > 0) {
+    if (removedPapers.length > 0 || allPapersData.length < totalPapers) {
       html += ` <button class="action-button" onclick="undoRemove()">Undo Remove</button>`;
     }
     inputsContainer.innerHTML = html;
@@ -607,13 +609,11 @@
     const xfactor = (separation === 1) ? 4 : 9;
     const required = studentCount * xfactor;
     if (roomCapacity >= required) {
-      // Only subtract actual students allocated, not the separation-based requirement
-      return [roomCapacity - studentCount, 0];
+      return [roomCapacity - required, 0];
     } else {
       const max_students = Math.floor(roomCapacity / xfactor);
       const leftStudents = studentCount - max_students;
-      // Only subtract actual students allocated to this room
-      const remaining = roomCapacity - max_students;
+      const remaining = roomCapacity - max_students * xfactor;
       return [remaining, leftStudents];
     }
   }
@@ -803,110 +803,94 @@
     deAllocatePaper(index);
     const removedPaper = allPapersData.splice(index, 1)[0];
     removedPapers.push({ paper: removedPaper, index: index });
-    // Decrease totalPapers count
-    totalPapers--;
-    
-    // Adjust currentPaperIndex if needed
-    if (currentPaperIndex > allPapersData.length) {
-      currentPaperIndex = allPapersData.length;
-    }
-    
+    totalPapers = allPapersData.length;
+    currentPaperIndex = allPapersData.length;
     reRenderSummaries();
-    
-    // Check if we're still filling forms or at final summary
-    if (currentPaperIndex < totalPapers) {
-      // Still filling forms, show the current form
-      showCurrentPaperForm();
-    } else {
-      // All forms filled, show final summary
-      showFinalSummary();
-    }
+    showFinalSummary();
   }
 
   function undoRemove() {
     if (removedPapers.length > 0) {
       const last = removedPapers.pop();
-      
-      // Restore the paper data
-      allPapersData.splice(last.index, 0, last.paper);
-      //increase papercount back 
-      totalPapers++;
-      let VirtalStudentCount = last.paper.studentCount;
-      let usedSeatsPerRoom = [];
-      const currentDateStr = last.paper.date;
-      const currentRooms = last.paper.rooms.map(roomId => ({
-        roomId,
-        capacity: ''
-      }));
-      const dateEntry = AllocatedRooms.find(entry => entry.date === currentDateStr);
-      if (dateEntry) {
-        const prevRooms = dateEntry.rooms;
-        const updatedRooms = prevRooms.map(room => {
-          const isCurrent = currentRooms.find(r => r.roomId === room.roomId);
-          if (isCurrent) {
-            const oldCap = parseInt(room.capacity);
-            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, oldCap);
-            const used = oldCap - remaining;
-            usedSeatsPerRoom.push(used);
-            VirtalStudentCount = leftStudents;
-            return { roomId: room.roomId, capacity: remaining };
-          } else {
-            return room;
-          }
-        });
-        currentRooms.forEach(room => {
-          if (!updatedRooms.find(r => r.roomId === room.roomId)) {
-            const availRoom = allAvailableRooms.find(r => r.RoomId === room.roomId);
-            const origCapacity = parseInt(availRoom.TotalCapacity || availRoom.totalCapacity, 10);
-            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, origCapacity);
-            const used = origCapacity - remaining;
-            usedSeatsPerRoom.push(used);
-            VirtalStudentCount = leftStudents;
-            updatedRooms.push({
-              roomId: room.roomId,
-              capacity: remaining
-            });
-          }
-        });
-        dateEntry.rooms = updatedRooms;
+      if (last.roomId) {
+        const parent = last.parent;
+        const tag = document.createElement("span");
+        tag.classList.add("tag");
+        tag.setAttribute("data-room", last.roomId);
+        tag.setAttribute("data-capacity", ""); // Capacity needs to be restored if available
+        tag.innerHTML = `${last.roomId} <span class="remove" onclick="removeTag(event, this)">❌</span>`;
+        parent.appendChild(tag);
       } else {
-        const updatedRooms = allAvailableRooms.map(room => {
-          const availRoom = currentRooms.find(r => r.roomId === room.RoomId);
-          if (availRoom) {
-            const origCapacity = parseInt(room.TotalCapacity || room.totalCapacity, 10);
-            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, origCapacity);
-            const used = origCapacity - remaining;
-            usedSeatsPerRoom.push(used);
-            VirtalStudentCount = leftStudents;
-            return {
-              roomId: room.RoomId,
-              capacity: remaining
-            };
-          } else {
-            return {
-              roomId: room.RoomId,
-              capacity: room.totalCapacity || room.TotalCapacity
-            };
-          }
-        });
-        AllocatedRooms.push({
-          date: currentDateStr,
-          rooms: updatedRooms
-        });
+        allPapersData.splice(last.index, 0, last.paper);
+        let VirtalStudentCount = last.paper.studentCount;
+        let usedSeatsPerRoom = [];
+        const currentDateStr = last.paper.date;
+        const currentRooms = last.paper.rooms.map(roomId => ({
+          roomId,
+          capacity: '' // not needed
+        }));
+        const dateEntry = AllocatedRooms.find(entry => entry.date === currentDateStr);
+        if (dateEntry) {
+          const prevRooms = dateEntry.rooms;
+          const updatedRooms = prevRooms.map(room => {
+            const isCurrent = currentRooms.find(r => r.roomId === room.roomId);
+            if (isCurrent) {
+              const oldCap = parseInt(room.capacity);
+              const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, oldCap);
+              const used = oldCap - remaining;
+              usedSeatsPerRoom.push(used);
+              VirtalStudentCount = leftStudents;
+              return { roomId: room.roomId, capacity: remaining };
+            } else {
+              return room;
+            }
+          });
+          currentRooms.forEach(room => {
+            if (!updatedRooms.find(r => r.roomId === room.roomId)) {
+              const availRoom = allAvailableRooms.find(r => r.RoomId === room.roomId);
+              const origCapacity = parseInt(availRoom.TotalCapacity || availRoom.totalCapacity, 10);
+              const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, origCapacity);
+              const used = origCapacity - remaining;
+              usedSeatsPerRoom.push(used);
+              VirtalStudentCount = leftStudents;
+              updatedRooms.push({
+                roomId: room.roomId,
+                capacity: remaining
+              });
+            }
+          });
+          dateEntry.rooms = updatedRooms;
+        } else {
+          const updatedRooms = allAvailableRooms.map(room => {
+            const availRoom = currentRooms.find(r => r.roomId === room.RoomId);
+            if (availRoom) {
+              const origCapacity = parseInt(room.TotalCapacity || room.totalCapacity, 10);
+              const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, origCapacity);
+              const used = origCapacity - remaining;
+              usedSeatsPerRoom.push(used);
+              VirtalStudentCount = leftStudents;
+              return {
+                roomId: room.RoomId,
+                capacity: remaining
+              };
+            } else {
+              return {
+                roomId: room.RoomId,
+                capacity: room.totalCapacity || room.TotalCapacity
+              };
+            }
+          });
+          AllocatedRooms.push({
+            date: currentDateStr,
+            rooms: updatedRooms
+          });
+        }
+        last.paper.usedSeatsPerRoom = usedSeatsPerRoom;
       }
-      last.paper.usedSeatsPerRoom = usedSeatsPerRoom;
-      
-      // Don't change totalPapers or currentPaperIndex drastically
+      totalPapers = allPapersData.length;
+      currentPaperIndex = allPapersData.length;
       reRenderSummaries();
-      
-      // Check if we're in final summary or still filling forms
-      if (currentPaperIndex < totalPapers) {
-        // Still filling forms, stay on current form
-        showCurrentPaperForm();
-      } else {
-        // At final summary
-        showFinalSummary();
-      }
+      showCurrentPaperForm();
     }
   }
 

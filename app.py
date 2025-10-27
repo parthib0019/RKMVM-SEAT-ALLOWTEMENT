@@ -190,25 +190,16 @@ def allocate_seats(seat_matrix, rolls, paper, year, sep, subject):
     return seat_matrix, rolls
 
 def export_pdf(pdf_path, totalRooms):
-    """
-    totalRooms = {
-        "Room15-2025-08-25": (seat_matrix, date),
-        ...
-    }
-    """
     doc = SimpleDocTemplate(pdf_path, pagesize=A4)
     elements = []
     styles = getSampleStyleSheet()
-
+    
     # Constants for cell sizes
-    SEAT_WIDTH = 80   # ~ 11 characters
-    GUTTER_WIDTH = 15 # ~ 1 character
-    ROW_HEIGHT = 25
-    ROW_NUM_WIDTH = 25  # width for row number column
+    SEAT_WIDTH, GUTTER_WIDTH, ROW_HEIGHT, ROW_NUM_WIDTH = 80, 15, 25, 25
 
     for room, (seat_matrix, date) in totalRooms.items():
         # --- Header ---
-        room_display = room.split("_")[0]  # original room number
+        room_display = room.split("_")[0]
         header_text = (
             "<b>RAMAKRISHNA MISSION VIDYAMANDIRA</b><br/>"
             "Howrah, Belur: 711202<br/><br/>"
@@ -218,68 +209,59 @@ def export_pdf(pdf_path, totalRooms):
         elements.append(Spacer(1, 12))
 
         # --- Build seat grid ---
-        max_rows = max(len(col) for col in seat_matrix)
+        if not seat_matrix or not any(seat_matrix):
+            elements.append(PageBreak())
+            continue
+            
+        max_rows = max(len(col) for col in seat_matrix if col)
         data = []
 
         for r in range(max_rows):
-            row_data = []
-
-            # Add row number in first column
-            row_data.append(str(r + 1))
-
-            for c in range(len(seat_matrix)):
+            row_data = [str(r + 1)] # Row number
+            for c, col in enumerate(seat_matrix):
                 # Insert gutter after every 2 seat-columns
                 if c > 0 and c % 2 == 0:
                     row_data.append("   ")
 
-                if r < len(seat_matrix[c]):
-                    seat = seat_matrix[c][r]
-                    if seat == "e":  # empty seat with border
+                if r < len(col):
+                    seat = col[r]
+                    if seat == "e":
                         row_data.append("")  
-                    elif seat is None:  # no seat at all
+                    elif seat is None:
                         row_data.append(None)
-                    else:  # filled seat
+                    else:
                         roll, paper, yr, subject = seat
                         row_data.append(f"{roll}\n{subject}-{yr}")
                 else:
                     row_data.append(None)
             data.append(row_data)
 
-        # --- Create custom colWidths (add row number col first) ---
+        # --- Create custom colWidths ---
         num_cols = len(data[0])
-        colWidths = [ROW_NUM_WIDTH]  # first column for row numbers
+        colWidths = [ROW_NUM_WIDTH]
         for c in range(1, num_cols):
-            if all(row[c] == "   " or row[c] is None for row in data):
-                colWidths.append(GUTTER_WIDTH)
-            else:
-                colWidths.append(SEAT_WIDTH)
+            is_gutter = all(row[c] == "   " or row[c] is None for row in data)
+            colWidths.append(GUTTER_WIDTH if is_gutter else SEAT_WIDTH)
 
-        rowHeights = [ROW_HEIGHT for _ in range(len(data))]
-        table = Table(data, colWidths=colWidths, rowHeights=rowHeights)
+        table = Table(data, colWidths=colWidths, rowHeights=[ROW_HEIGHT] * len(data))
 
-        # --- Styling ---
+        # --- Styling (Strictly Black & White) ---
         style_commands = []
-
         for r, row in enumerate(data):
             for c, cell in enumerate(row):
-                if c == 0:  # row number column → NO border
+                # Only apply borders to cells with student data
+                if c == 0 or cell is None or cell == "   " or cell == "":
+                    # No border for row numbers, empty cells, or gutters
                     style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
-                elif cell is None:  # no seat → no border
-                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
-                elif cell == "   ":  # gutter → no border
-                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
-                else:  # filled seat or empty seat → border
+                else:
+                    # Black grid for student cells
                     style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
-
-        # Merge gutters
-        for c in range(1, num_cols):
-            if all(row[c] == "   " for row in data):
-                style_commands.append(("SPAN", (c, 0), (c, len(data)-1)))
-                style_commands.append(("BOX", (c, 0), (c, len(data)-1), 0, colors.white))
-                style_commands.append(("BACKGROUND", (c, 0), (c, len(data)-1), colors.white))
-
-        style_commands.append(("ALIGN", (0, 0), (-1, -1), "CENTER"))
-        style_commands.append(("VALIGN", (0, 0), (-1, -1), "MIDDLE"))
+        
+        # Center alignment for all cells
+        style_commands.extend([
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE")
+        ])
         table.setStyle(TableStyle(style_commands))
 
         elements.append(table)
@@ -350,6 +332,10 @@ def delete_studentinfo_route():
     conn.execute("DELETE FROM StudentInfo WHERE Year = ?", (year,))
     conn.commit()
     return jsonify({"success": True, "message": f"Record for Year {year} deleted."})
+
+@app.route("/developers")
+def developers():
+    return render_template("devteam.html")
 
 # --- Main Allocation Route ---
 @app.route("/", methods=["GET", "POST"])

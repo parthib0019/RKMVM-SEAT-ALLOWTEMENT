@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="/static/img/rasa1.png" type="image/png">
+  <title>Dev Team</title>
+  <style>
+    :root {
+      --background-color-light: #f4f4f9;
+      --text-color-light: #1c1c1c;
+      --card-background-light: #ffffff;
+      --accent-color: #fec304;
+      --button-hover-light: #f3ab53;
+      --border-color-light: #ddd;
+    }
+
+    .dark-mode {
+      --background-color-light: #121212;
+      --text-color-light: #f0f0f0;
+      --card-background-light: #1e1e1e;
+      --border-color-light: #988383;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--background-color-light);
+      color: var(--text-color-light);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      transition: background 0.5s ease, color 0.5s ease;
+    }
+
+    /* Header */
+    .transparent-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      width: 100%;
+      height: 70px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .dark-mode .transparent-header {
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .transparent-header img {
+      height: 50px;
+    }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .nav-container .nav-buttons button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 50px;
+      background: var(--card-background-light);
+      color: var(--text-color-light);
+      font-weight: bold;
+      cursor: pointer;
+      transition: all .3s ease-in-out;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .nav-container .nav-buttons button:hover {
+      background: var(--button-hover-light);
+      color: #121212;
+      transform: translateY(-2px);
+      box-shadow: 0 0 15px var(--accent-color);
+    }
+
+    .mode-toggle {
+      width: 45px;
+      height: 45px;
+      border: none;
+      border-radius: 50%;
+      background: var(--card-background-light);
+      color: var(--text-color-light);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all .3s ease-in-out;
+    }
+
+    .mode-toggle:hover {
+      background: var(--accent-color);
+      color: #121212;
+      transform: scale(1.1);
+      box-shadow: 0 0 15px var(--accent-color);
+    }
+
+    /* Main content */
+    .main-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px 0;
+    }
+
+    .card-container {
+      max-width: 1200px;
+      width: 90%;
+      margin: 40px auto;
+      padding: 20px;
+      background: var(--card-background-light);
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: background 0.3s ease;
+    }
+
+    h2 {
+      margin-bottom: 30px;
+      font-size: 2.2rem;
+      text-align: center;
+    }
+
+    .dev-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 25px;
+      width: 100%;
+    }
+
+    /* ✨ Updated card animation */
+    .dev-card {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: var(--card-background-light);
+      border: 1px solid var(--border-color-light);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      transform: translateY(0) scale(1);
+    }
+
+    .dev-card:hover {
+      transform: translateY(-12px) scale(1.04);
+      box-shadow: 0 18px 35px rgba(0, 102, 255, 0.25);
+      border-color: rgba(0, 102, 255, 0.3);
+    }
+
+    .dev-photo {
+      width: 85px;
+      height: 85px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #ddd;
+      flex-shrink: 0;
+      transition: transform 0.4s ease;
+    }
+
+    .dev-card:hover .dev-photo {
+      transform: scale(1.07);
+    }
+
+    .dev-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .dev-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dev-name {
+      font-weight: bold;
+      font-size: 1.15rem;
+      margin-bottom: 6px;
+    }
+
+    .dev-year {
+      font-size: 0.9rem;
+      color: var(--accent-color);
+      margin-bottom: 5px;
+    }
+
+    .dev-role {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ✨ Updated LinkedIn styling */
+    .linkedin-icon {
+      width: 25px;
+      height: 25px;
+      vertical-align: middle;
+      transition: transform 0.3s ease, filter 0.3s ease;
+      filter: drop-shadow(0 0 2px rgba(0, 119, 181, 0.6));
+    }
+
+    .linkedin-icon:hover {
+      transform: scale(1.25);
+      filter: drop-shadow(0 0 10px #0077b5);
+    }
+
+    /* Footer */
+    .footer {
+      background: #808080;
+      color: #fff;
+      padding: 20px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+
+    .footer-top {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+
+    .footer-logo {
+      height: 65px;
+      width: 40px;
+      object-fit: contain;
+    }
+
+    .footer-text {
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    .footer-bottom {
+      width: 100%;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.3);
+      padding-top: 8px;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+      .footer-top {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .footer-logo {
+        height: 45px;
+      }
+      .footer-text {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="transparent-header">
+    <div class="nav-container">
+      <img src="/static/img/rasa1.png" alt="Left Logo">
+      <div class="nav-buttons">
+        <a href="/"><button>Seat Allocation</button></a>
+        <a href="/Studentinfo"><button>Student Information</button></a>
+        <a href="/Roominfo"><button>Room Information</button></a>
+      </div>
+    </div>
+    <div class="nav-container">
+      <button class="mode-toggle" id="modeToggle">☀️</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <main class="card-container">
+      <h2>Our Developers</h2>
+      <section class="dev-grid" id="devGrid"></section>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-top">
+      <img src="/static/img/logo.png" alt="Footer Logo" class="footer-logo">
+      <span class="footer-text">Ramkrishna Mission Vidyamandira</span>
+    </div>
+    <div class="footer-bottom">
+      <b>© 2025 Ramakrishna Mission Vidyamandira Computer Science Department. All Rights Reserved.</b>
+    </div>
+  </footer>
+
+  <script>
+    const devs = [
+      {name:'Anirban Santra',year:'PG-II  (2024-2026)',role:'Technical Advisor',photo:'/static/devimg/anirban.jpg',linkedin:'https://www.linkedin.com/in/anirban-santra-/'},
+      {name:'Mayukh Bandyopadhyay',year:'UG-I  (2025-2029)',role:'Frontend',photo:'/static/devimg/mayukh.jpg',linkedin:'https://www.linkedin.com/in/mayukh-bandyopadhyay-938415380/'},
+      {name:'Parthib Ghosh',year:'UG-I  (2025-2029)',role:'Backend',photo:'/static/devimg/parthib.jpg',linkedin:'https://www.linkedin.com/in/parthib-ghosh-628762337/'},
+      {name:'Subhraneel Pal',year:'UG-I  (2025-2029)',role:'Frontend',photo:'/static/devimg/subhraneel.jpg',linkedin:'https://www.linkedin.com/in/subhraneel-pal-862489375'},
+      {name:'Sougata Chongder',year:'UG-I  (2025-2029)',role:'Frontend',photo:'/static/devimg/sougata.jpg',linkedin:'https://www.linkedin.com/in/sougata-chongder-82198737a/'},
+      {name:'Swarnim Das',year:'UG-I  (2025-2029)',role:'Frontend',photo:'/static/devimg/swarnim.jpg',linkedin:'https://www.linkedin.com/in/swarnim-das-b3314b293/'},
+      {name:'Atig Singh',year:'UG-I  (2025-2029)',role:'Frontend',photo:'/static/devimg/atig.jpg',linkedin:'https://www.linkedin.com/in/atig-singh-37726137a/'},
+      {name:'Ujjal Ghosh',year:'UG-I  (2025-2029)',role:'Frontend',photo:'/static/devimg/ujjal.jpg',linkedin:''}
+    ];
+
+    const grid = document.getElementById('devGrid');
+    devs.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'dev-card';
+      card.innerHTML = `
+        <div class="dev-photo">
+          ${d.photo ? `<img src="${d.photo}" alt="${d.name}">`
+          : `<div style='display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:bold;color:#888;'>${d.name[0]}</div>`}
+        </div>
+        <div class="dev-info">
+          <div class="dev-name">${d.name}</div>
+          <div class="dev-year">${d.year}</div>
+          <div class="dev-role">
+            ${d.role}
+            <a href="${d.linkedin}" target="_blank">
+              <img src="/static/img/linkedinlogo.png" alt="LinkedIn" class="linkedin-icon">
+            </a>
+          </div>
+        </div>`;
+      grid.appendChild(card);
+    });
+
+    const modeToggle = document.getElementById('modeToggle');
+    const body = document.body;
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) body.classList.add(savedTheme);
+
+    modeToggle.addEventListener('click', () => {
+      body.classList.toggle('dark-mode');
+      const theme = body.classList.contains('dark-mode') ? 'dark-mode' : '';
+      localStorage.setItem('theme', theme);
+      modeToggle.innerHTML = theme === 'dark-mode' ? '🌙' : '☀️';
+    });
+  </script>
+</body>
+</html>
