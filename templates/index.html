@@ -99,6 +99,95 @@
     .summary-card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 10px; }
     .summary-card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.9em; opacity: 0.9; }
     .summary-item strong { color: var(--accent-color); }
+    .summary-actions { display: flex; gap: 10px; }
+    .summary-actions button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 25px;
+      background: var(--accent-color);
+      color: #121212;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .summary-actions button:hover {
+      background: var(--button-hover-light);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .summary-actions button.edit-btn {
+      background: #4CAF50; /* Green for edit */
+    }
+    .summary-actions button.edit-btn:hover {
+      background: #45a049;
+    }
+    .summary-actions button.remove-btn {
+      background: #f44336; /* Red for remove */
+    }
+    .summary-actions button.remove-btn:hover {
+      background: #da190b;
+    }
+
+    /* Footer */
+    .footer {
+      background: #808080;
+      color: #fff;
+      padding: 20px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+
+    .footer-top {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+
+    .footer-logo {
+      height: 65px;
+      width: 40px;
+      object-fit: contain;
+    }
+
+    .footer-text {
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    .footer-bottom {
+      width: 100%;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.3);
+      padding-top: 8px;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .footer-bottom a {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .footer-top {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .footer-logo {
+        height: 45px;
+      }
+      .footer-text {
+        font-size: 1.2rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -166,7 +255,7 @@
   let allPapersData = [];
   let allAvailableRooms = Object.keys('{{ rooms | tojson }}').length > 2 ? JSON.parse('{{ rooms | tojson | safe }}') : [{"RoomId": "you Have not enter any room Info", "totalCapacity": " "}];
   let AllocatedRooms = [];
-  
+  let removedPapers = [];
 
   let activeInput = null;
   let currentDate = new Date();
@@ -186,6 +275,9 @@
     modeToggle.innerHTML = currentTheme === 'dark-mode' ? '🌙' : '☀️';
   });
 
+  let isEditing = false;
+  let editingIndex = -1;
+
   function startWizard() {
     totalPapers = parseInt(document.getElementById("numInputs").value, 10);
     if (isNaN(totalPapers) || totalPapers < 1) {
@@ -202,16 +294,18 @@
 
   function showCurrentPaperForm() {
     inputsContainer.innerHTML = "";
-    if (currentPaperIndex >= totalPapers) {
+    if (currentPaperIndex >= totalPapers && !isEditing) {
       showFinalSummary();
       return;
     }
-    const i = currentPaperIndex;
+    const i = isEditing ? editingIndex : currentPaperIndex;
+    const total = isEditing ? allPapersData.length : totalPapers;
     const div = document.createElement("div");
     div.classList.add("form-section");
-    const buttonText = (i === totalPapers - 1) ? "Finish & Review" : "Save & Next Paper";
+    const buttonText = isEditing ? "Save Changes" : (currentPaperIndex === totalPapers - 1) ? "Finish & Review" : "Save & Next Paper";
+    const headerText = isEditing ? `Editing Paper ${i + 1} of ${total}` : `Paper ${allPapersData.length + 1} of ${total} Details`;
     div.innerHTML = `
-      <h3>Paper ${i + 1} of ${totalPapers} Details</h3>
+      <h3>${headerText}</h3>
       <label>Date:</label>
       <input type="text" class="date-input" placeholder="dd/mm/yyyy" readonly onclick="showCalendar(this)">
       <label>Paper Name:</label>
@@ -241,9 +335,10 @@
       <label>Room Number(s):</label>
       <div class="multi-select" id="roomSelectCurrent">
         <div class="selected-rooms"></div>
-        <select class="room-options"><option value="">--Select Room/s--</option></select>
+        <select class="room-options"><option value="">--Select Room--</option></select>
       </div>
       <button class="action-button" style="margin-top: 25px;" onclick="handleNextClick()">${buttonText}</button>
+      ${removedPapers.length > 0 ? '<button class="action-button" style="margin-top: 10px;" onclick="undoRemove()">Undo Remove</button>' : ''}
     `;
     inputsContainer.appendChild(div);
     setupMultiSelect('roomSelectCurrent');
@@ -335,12 +430,31 @@
     }
     });
 
-
-//---------------------------------------
     const inputsToWatch = ['.year-input', '.subject-input', '.stype-input', '.separation-input', '.paper-input', '.date-input'];
     inputsToWatch.forEach(selector => {
       div.querySelector(selector).addEventListener('change', fetchStudentCount);
       div.querySelector(selector).addEventListener('blur', fetchStudentCount);
+    });
+    if (!isEditing) {
+      fetchStudentCount();
+    }
+  }
+
+  function removeTag(event, element) {
+    event.stopPropagation();
+    const tag = element.parentElement;
+    tag.remove();
+  }
+
+  function deAllocatePaper(index) {
+    const paper = allPapersData[index];
+    const dateEntry = AllocatedRooms.find(entry => entry.date === paper.date);
+    if (!dateEntry) return;
+    paper.rooms.forEach((roomId, j) => {
+      const room = dateEntry.rooms.find(r => r.roomId === roomId);
+      if (room) {
+        room.capacity += paper.usedSeatsPerRoom[j] || 0;
+      }
     });
   }
 
@@ -360,9 +474,8 @@
       tag.classList.add("tag");
       tag.setAttribute("data-room", value);
       tag.setAttribute("data-capacity", capacity);
-      tag.innerHTML = `${value} <span class="remove">❌</span>`;
+      tag.innerHTML = `${value} <span class="remove" onclick="removeTag(event, this)">❌</span>`;
       selectedContainer.appendChild(tag);
-      tag.querySelector(".remove").addEventListener("click", () => tag.remove());
       select.value = "";
     });
   }
@@ -391,7 +504,11 @@
 
   function showFinalSummary() {
     console.log("\n", AllocatedRooms, "\n  ------------------------");
-    inputsContainer.innerHTML = `<button class="action-button" onclick="submitData()">Generate Final Allocation</button>`;
+    let html = `<button class="action-button" onclick="submitData()">Generate Final Allocation</button>`;
+    if (removedPapers.length > 0) {
+      html += ` <button class="action-button" onclick="undoRemove()">Undo Remove</button>`;
+    }
+    inputsContainer.innerHTML = html;
   }
 
   function submitData() {
@@ -423,13 +540,12 @@
     if (!calendar.contains(e.target) && e.target !== activeInput) calendar.style.display = "none";
   });
 
-  // --- OVERRIDE: Calendar rendering to disable past dates ---
   function renderCalendar(date) {
     calendar.innerHTML = "";
     const month = date.getMonth(), year = date.getFullYear();
     const header = document.createElement("div");
     header.classList.add("calendar-header");
-    header.innerHTML = `<button onclick="prevMonth()">&#9664;</button><span>${monthNames[month]} ${year}</span><button onclick="nextMonth()">&#9654;</button>`;
+    header.innerHTML = `<button onclick="prevMonth(event)">&#9664;</button><span>${monthNames[month]} ${year}</span><button onclick="nextMonth(event)">&#9654;</button>`;
     calendar.appendChild(header);
 
     const daysHeader = document.createElement("div");
@@ -447,7 +563,7 @@
     for (let i = 0; i < firstDay; i++) daysGrid.appendChild(document.createElement("div"));
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to midnight for accurate date comparison
+    today.setHours(0, 0, 0, 0);
 
     const lastDate = new Date(year, month + 1, 0).getDate();
     for (let d = 1; d <= lastDate; d++) {
@@ -460,7 +576,6 @@
       } else {
         day.onclick = () => {
           activeInput.value = `${d}/${month + 1}/${year}`;
-          calendar.style.display = "none";
           activeInput.dispatchEvent(new Event('change'));
         };
       }
@@ -469,12 +584,34 @@
     calendar.appendChild(daysGrid);
   }
 
-  function prevMonth() { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(currentDate); }
-  function nextMonth() { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(currentDate); }
+  function prevMonth(event) {
+    event.stopPropagation();
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar(currentDate);
+  }
 
-  // --- OVERRIDE: handleNextClick with added validation ---
+  function nextMonth(event) {
+    event.stopPropagation();
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar(currentDate);
+  }
+
+  function remainingCapacityCounter(studentCount, separation, roomCapacity) {
+    const xfactor = (separation === 1) ? 4 : 9;
+    const required = studentCount * xfactor;
+    if (roomCapacity >= required) {
+      // Only subtract actual students allocated, not the separation-based requirement
+      return [roomCapacity - studentCount, 0];
+    } else {
+      const max_students = Math.floor(roomCapacity / xfactor);
+      const leftStudents = studentCount - max_students;
+      // Only subtract actual students allocated to this room
+      const remaining = roomCapacity - max_students;
+      return [remaining, leftStudents];
+    }
+  }
+
   function handleNextClick() {
-    // --- 1. Get all current values ---
     const dateInput = document.querySelector('.date-input');
     const paperInput = document.querySelector('.paper-input');
     const separationInput = document.querySelector('.separation-input');
@@ -485,13 +622,10 @@
     const paperName = paperInput.value.trim();
     const separation = parseInt(separationInput.value, 10);
 
-    // --- 2. Perform Validation ---
-    // Date validation: Not empty
     if (!dateStr) {
       alert("❌ Error: Please select a date.");
       return;
     }
-    // Date validation: Not in the past
     const dateParts = dateStr.split('/');
     const selectedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
     const today = new Date();
@@ -500,19 +634,30 @@
       alert("❌ Error: You cannot select a past date.");
       return;
     }
-    // Paper name validation
     if (!paperName) {
       alert("❌ Error: Paper Name cannot be empty.");
       return;
     }
-    // Room selection validation
     if (selectedRoomTags.length === 0) {
       alert("❌ Error: Please select at least one room.");
       return;
     }
-    // Capacity validation
-    const studentCountMatch = (studentCountSpan.textContent || "0").match(/\d+/);
-    const studentCount = studentCountMatch ? parseInt(studentCountMatch[0], 10) : 0;
+    let studentCountMatch = (studentCountSpan.textContent || "0").match(/\d+/);
+    let studentCount = studentCountMatch ? parseInt(studentCountMatch[0], 10) : 0;
+    let _rolls = JSON.parse(studentCountSpan.dataset.rolls || "[]");
+    if (isEditing) {
+      const original = allPapersData[editingIndex];
+      const changed = 
+        document.querySelector('.year-input').value !== original.year ||
+        document.querySelector('.subject-input').value !== original.subject ||
+        document.querySelector('.stype-input').value !== original.subjectType ||
+        document.querySelector('.paper-input').value !== original.paperName ||
+        document.querySelector('.date-input').value !== original.date;
+      if (!changed) {
+        studentCount = original.studentCount;
+        _rolls = original._rolls;
+      }
+    }
     if (studentCount > 0) {
       let totalChosenCapacity = 0;
       selectedRoomTags.forEach(tag => {
@@ -524,95 +669,70 @@
         return;
       }
     }
-    // --- Room allocation tracking logic ---
-    // --- Room allocation tracking logic with remaining capacity calculation --------------------------------------------------
-    function remainingCapacityCounter(studentCount, separation, roomCapacity){
-      xfactor = (separation === 1) ? 4 : 9;
-      if (roomCapacity >= studentCount * xfactor) {
-        return [roomCapacity - studentCount, 0]; // All students fit, return remaining capacity
-      } else {
-        let leftStudents = studentCount - parseInt(roomCapacity / xfactor);
-        let remaining = roomCapacity - parseInt(roomCapacity / xfactor);
-        return [remaining, leftStudents]; // Return used capacity and remaining students
-      }
-    }
-    // Prepare current entry
     const currentDateStr = dateStr;
     const currentRooms = Array.from(selectedRoomTags).map(tag => ({
       roomId: tag.getAttribute("data-room"),
       capacity: tag.getAttribute("data-capacity")
     }));
-
-    // Find if entry for this date exists
-    let dateEntry = AllocatedRooms.find(entry => entry.date === currentDateStr);
-    VirtalStudentCount = studentCount;
+    let VirtalStudentCount = studentCount;
+    let usedSeatsPerRoom = [];
+    const dateEntry = AllocatedRooms.find(entry => entry.date === currentDateStr);
     if (dateEntry) {
-      // There is already an entry for this date
-      // Copy previous room data for this date
       const prevRooms = dateEntry.rooms;
-      // Update only the rooms chosen in current input, keep others unchanged
       const updatedRooms = prevRooms.map(room => {
-      const isCurrent = currentRooms.find(r => r.roomId === room.roomId);
-      if (isCurrent) {
-        // Recalculate capacity for this room
-
-        const [usedOrLeft, leftStudents] = remainingCapacityCounter(VirtalStudentCount, separation, parseInt(room.capacity));
-        VirtalStudentCount = leftStudents;
-        return {
-        roomId: room.roomId,
-        capacity: usedOrLeft
-        };
-      } else {
-        // Keep unchanged
-        return room;
-      }
+        const isCurrent = currentRooms.find(r => r.roomId === room.roomId);
+        if (isCurrent) {
+          const oldCap = parseInt(room.capacity);
+          const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, separation, oldCap);
+          const used = oldCap - remaining;
+          usedSeatsPerRoom.push(used);
+          VirtalStudentCount = leftStudents;
+          return { roomId: room.roomId, capacity: remaining };
+        } else {
+          return room;
+        }
       });
-      // Add any new rooms chosen in current input but not in prevRooms
       currentRooms.forEach(room => {
-      if (!updatedRooms.find(r => r.roomId === room.roomId)) {
-        const availRoom = allAvailableRooms.find(r => r.RoomId === room.roomId);
-        const origCapacity = parseInt(availRoom.TotalCapacity || availRoom.totalCapacity, 10);
-        const [usedOrLeft, leftStudents] = remainingCapacityCounter(VirtalStudentCount, separation, origCapacity);
-        VirtalStudentCount = leftStudents;
-        updatedRooms.push({
-        roomId: room.roomId,
-        capacity: usedOrLeft
-        });
-      }
+        if (!updatedRooms.find(r => r.roomId === room.roomId)) {
+          const availRoom = allAvailableRooms.find(r => r.RoomId === room.roomId);
+          const origCapacity = parseInt(availRoom.TotalCapacity || availRoom.totalCapacity, 10);
+          const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, separation, origCapacity);
+          const used = origCapacity - remaining;
+          usedSeatsPerRoom.push(used);
+          VirtalStudentCount = leftStudents;
+          updatedRooms.push({
+            roomId: room.roomId,
+            capacity: remaining
+          });
+        }
       });
-      // Update the entry
       dateEntry.rooms = updatedRooms;
     } else {
-      // No previous entry for this date, use allAvailableRooms
       const updatedRooms = allAvailableRooms.map(room => {
-      const availRoom = currentRooms.find(r => r.roomId === room.RoomId);
-      if (availRoom){
-        const origCapacity =parseInt(availRoom.capacity, 10);
-        const [usedOrLeft, leftStudents] = remainingCapacityCounter(VirtalStudentCount, separation, origCapacity);
-        VirtalStudentCount = leftStudents;
-        return {
-          roomId: room.RoomId,
-          capacity: usedOrLeft
-        };
-      }else{
-        let usedOrLeft = room.totalCapacity;
-        return {
-          roomId: room.RoomId,
-          capacity: usedOrLeft
-        };
-      }      
-       // Update for next room
-      
+        const availRoom = currentRooms.find(r => r.roomId === room.RoomId);
+        if (availRoom) {
+          const origCapacity = parseInt(room.TotalCapacity || room.totalCapacity, 10);
+          const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, separation, origCapacity);
+          const used = origCapacity - remaining;
+          usedSeatsPerRoom.push(used);
+          VirtalStudentCount = leftStudents;
+          return {
+            roomId: room.RoomId,
+            capacity: remaining
+          };
+        } else {
+          return {
+            roomId: room.RoomId,
+            capacity: room.totalCapacity || room.TotalCapacity
+          };
+        }
       });
       AllocatedRooms.push({
-      date: currentDateStr,
-      rooms: updatedRooms
+        date: currentDateStr,
+        rooms: updatedRooms
       });
     }
     console.log("\n", AllocatedRooms, "\n  ------------------------");
-    //----------------------------------------------------------------------------------------------
-
-    // --- 3. If all validations pass, proceed as before ---
     const paperData = {
       date: dateStr,
       paperName: paperName,
@@ -622,22 +742,33 @@
       separation: separation,
       rooms: Array.from(selectedRoomTags).map(tag => tag.getAttribute("data-room")),
       studentCount: studentCount,
-      _rolls: JSON.parse(studentCountSpan.dataset.rolls || "[]")
+      _rolls: _rolls,
+      usedSeatsPerRoom: usedSeatsPerRoom
     };
-    allPapersData.push(paperData);
-    renderSummaryRow(paperData); // Use the new, improved renderer
-    currentPaperIndex++;
+    if (isEditing) {
+      allPapersData[editingIndex] = paperData;
+      reRenderSummaries();
+      isEditing = false;
+      editingIndex = -1;
+    } else {
+      allPapersData.push(paperData);
+      renderSummaryRow(paperData, allPapersData.length - 1);
+      currentPaperIndex++;
+    }
     showCurrentPaperForm();
   }
 
-  // --- OVERRIDE: renderSummaryRow with upgraded UI ---
-  function renderSummaryRow(data) {
+  function renderSummaryRow(data, index) {
     const card = document.createElement('div');
     card.classList.add('summary-card');
     card.innerHTML = `
       <div class="summary-card-header">
         <span>${data.paperName}</span>
         <span>${data.date}</span>
+        <div class="summary-actions">
+          <button class="edit-btn" onclick="if(confirm('Are you sure you want to edit this paper?')) editPaper(${index})">Edit</button>
+          <button class="remove-btn" onclick="if(confirm('Are you sure you want to remove this paper?')) removePaper(${index})">Remove</button>
+        </div>
       </div>
       <div class="summary-card-body">
         <div class="summary-item"><strong>Subject:</strong> ${data.subject} [${data.subjectType}]</div>
@@ -650,33 +781,151 @@
     summaryContainer.appendChild(card);
   }
 
-  // --- OVERRIDE: validateAllPapers with year-specific roll conflict check ---
+  function reRenderSummaries() {
+    summaryContainer.innerHTML = "";
+    allPapersData.forEach((data, i) => renderSummaryRow(data, i));
+  }
+
+  function editPaper(index) {
+    isEditing = true;
+    editingIndex = index;
+    showCurrentPaperForm();
+  }
+
+  function removePaper(index) {
+    deAllocatePaper(index);
+    const removedPaper = allPapersData.splice(index, 1)[0];
+    removedPapers.push({ paper: removedPaper, index: index });
+    // Decrease totalPapers count
+    totalPapers--;
+    
+    // Adjust currentPaperIndex if needed
+    if (currentPaperIndex > allPapersData.length) {
+      currentPaperIndex = allPapersData.length;
+    }
+    
+    reRenderSummaries();
+    
+    // Check if we're still filling forms or at final summary
+    if (currentPaperIndex < totalPapers) {
+      // Still filling forms, show the current form
+      showCurrentPaperForm();
+    } else {
+      // All forms filled, show final summary
+      showFinalSummary();
+    }
+  }
+
+  function undoRemove() {
+    if (removedPapers.length > 0) {
+      const last = removedPapers.pop();
+      
+      // Restore the paper data
+      allPapersData.splice(last.index, 0, last.paper);
+      //increase papercount back 
+      totalPapers++;
+      let VirtalStudentCount = last.paper.studentCount;
+      let usedSeatsPerRoom = [];
+      const currentDateStr = last.paper.date;
+      const currentRooms = last.paper.rooms.map(roomId => ({
+        roomId,
+        capacity: ''
+      }));
+      const dateEntry = AllocatedRooms.find(entry => entry.date === currentDateStr);
+      if (dateEntry) {
+        const prevRooms = dateEntry.rooms;
+        const updatedRooms = prevRooms.map(room => {
+          const isCurrent = currentRooms.find(r => r.roomId === room.roomId);
+          if (isCurrent) {
+            const oldCap = parseInt(room.capacity);
+            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, oldCap);
+            const used = oldCap - remaining;
+            usedSeatsPerRoom.push(used);
+            VirtalStudentCount = leftStudents;
+            return { roomId: room.roomId, capacity: remaining };
+          } else {
+            return room;
+          }
+        });
+        currentRooms.forEach(room => {
+          if (!updatedRooms.find(r => r.roomId === room.roomId)) {
+            const availRoom = allAvailableRooms.find(r => r.RoomId === room.roomId);
+            const origCapacity = parseInt(availRoom.TotalCapacity || availRoom.totalCapacity, 10);
+            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, origCapacity);
+            const used = origCapacity - remaining;
+            usedSeatsPerRoom.push(used);
+            VirtalStudentCount = leftStudents;
+            updatedRooms.push({
+              roomId: room.roomId,
+              capacity: remaining
+            });
+          }
+        });
+        dateEntry.rooms = updatedRooms;
+      } else {
+        const updatedRooms = allAvailableRooms.map(room => {
+          const availRoom = currentRooms.find(r => r.roomId === room.RoomId);
+          if (availRoom) {
+            const origCapacity = parseInt(room.TotalCapacity || room.totalCapacity, 10);
+            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, origCapacity);
+            const used = origCapacity - remaining;
+            usedSeatsPerRoom.push(used);
+            VirtalStudentCount = leftStudents;
+            return {
+              roomId: room.RoomId,
+              capacity: remaining
+            };
+          } else {
+            return {
+              roomId: room.RoomId,
+              capacity: room.totalCapacity || room.TotalCapacity
+            };
+          }
+        });
+        AllocatedRooms.push({
+          date: currentDateStr,
+          rooms: updatedRooms
+        });
+      }
+      last.paper.usedSeatsPerRoom = usedSeatsPerRoom;
+      
+      // Don't change totalPapers or currentPaperIndex drastically
+      reRenderSummaries();
+      
+      // Check if we're in final summary or still filling forms
+      if (currentPaperIndex < totalPapers) {
+        // Still filling forms, stay on current form
+        showCurrentPaperForm();
+      } else {
+        // At final summary
+        showFinalSummary();
+      }
+    }
+  }
+
   function validateAllPapers() {
     const papers = new Set();
-    const rollsByYear = {}; // Example: { 'UG-1': Set{'101', '102'}, 'UG-2': Set{'201'} }
+    const rollsByYear = {};
     for (const paperData of allPapersData) {
-      // 1. Check for duplicate paper names
       if (papers.has(paperData.paperName)) {
         alert(`❌ Duplicate paper name found: ${paperData.paperName}`);
         return false;
       }
       papers.add(paperData.paperName);
-      // 2. Check for roll number conflicts within the same year
       const year = paperData.year;
       if (!rollsByYear[year]) {
-        rollsByYear[year] = new Set(); // Initialize a new Set for this year if it doesn't exist
+        rollsByYear[year] = new Set();
       }
       for (const roll of paperData._rolls) {
         if (rollsByYear[year].has(roll)) {
           alert(`❌ Roll number conflict detected for year ${year}: Student ${roll} is in multiple papers.`);
-          return false; // Conflict found
+          return false;
         }
-        rollsByYear[year].add(roll); // Add roll to the Set for this year
+        rollsByYear[year].add(roll);
       }
     }
-    return true; // No conflicts found
+    return true;
   }
   </script>
 </body>
 </html>
-
