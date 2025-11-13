@@ -14,6 +14,7 @@ from reportlab.lib import colors
 from io import BytesIO
 from flaskwebgui import FlaskUI
 import platform
+import webview
 
 # --- Custom Database Imports ---
 from database import get_db_connection, init_db
@@ -404,21 +405,25 @@ def start_flask(**kwargs):
     app.run(**kwargs)
 
 # This is the new main entry point for the desktop app
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    browser_path = None
-    # If on Linux, you may need to specify the browser path explicitly
-    if platform.system() == "Linux":
-        # Edit this path to the location of your Chrome/Chromium executable
-        # Common paths: '/usr/bin/google-chrome-stable', '/usr/bin/chromium-browser'
-        browser_path = "/snap/bin/brave"
-    icon_path = "static/img/rasa1.png"
-    FlaskUI(
-        server=start_flask,
-        server_kwargs={"host": "127.0.0.1", "port": 5000},
-        app="flask",
-        width=1000,
-        fullscreen=False,
-        height=600,
-        browser_path=browser_path, # This tells the app where to find the browser
-    ).run()
+#     browser_path = None
+#     # If on Linux, you may need to specify the browser path explicitly
+#     if platform.system() == "Linux":
+#         # Edit this path to the location of your Chrome/Chromium executable
+#         # Common paths: '/usr/bin/google-chrome-stable', '/usr/bin/chromium-browser'
+#         browser_path = "/snap/bin/brave"
+#     icon_path = "static/img/rasa1.png"
+#     FlaskUI(
+#         server=start_flask,
+#         server_kwargs={"host": "127.0.0.1", "port": 5000},
+#         app="flask",
+#         width=1000,
+#         fullscreen=False,
+#         height=600,
+#         browser_path=browser_path, # This tells the app where to find the browser
+#     ).run()
+
+if __name__ == "__main__":
+    webview.create_window("PyWebView & Flask", app)
+    webview.start(icon="static/img/SARA-FAVICON.ico")

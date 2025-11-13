@@ -21,6 +21,9 @@ import pandas as pd
 from io import BytesIO
 from typing import Dict, List, Tuple, Any
 from flask import jsonify
+import webview 
+import sys
+import threading
 
 # ------------------ Flask Setup ------------------
 app = Flask(__name__)
@@ -637,6 +640,9 @@ def index():
 
     return render_template("index.html", rooms=suitable_rooms)
 
+def start_server():
+    app.run(host='0.0.0.0', port=80)
+
 @app.route("/download/<filename>")
 def download_file(filename):
     return send_from_directory(app.config['OUTPUT_FOLDER'], filename, as_attachment=True)
@@ -647,4 +653,5 @@ def developers():
 
 # ------------------ Run ------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
+    
