@@ -33,6 +33,7 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["OUTPUT_FOLDER"] = OUTPUT_FOLDER
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 # --- Database Connection Management ---
 with app.app_context():
@@ -425,5 +426,5 @@ def start_flask(**kwargs):
 #     ).run()
 
 if __name__ == "__main__":
-    webview.create_window("PyWebView & Flask", app)
+    webview.create_window("SARA", app)
     webview.start(icon="static/img/SARA-FAVICON.ico")
