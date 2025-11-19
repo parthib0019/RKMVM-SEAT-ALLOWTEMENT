@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>SARA -- Seat Allocation with Recatangular Array</title>
-  <!-- favicon -->
   <link rel="icon" type="image/png" href="static/favicon/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="static/favicon/favicon.svg" />
   <link rel="shortcut icon" href="static/favicon/favicon.ico" />
@@ -129,6 +128,68 @@
       background: #da190b;
     }
 
+    /* Custom Alert Modal Styles */
+    .custom-alert-modal {
+      position: fixed;
+      z-index: 3000; /* Ensure it's above everything */
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none; /* Hidden by default */
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    .custom-alert-modal.show {
+      display: flex;
+      opacity: 1;
+    }
+
+    .custom-alert-content {
+      background: var(--card-background-light);
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .custom-alert-modal.show .custom-alert-content {
+      transform: scale(1);
+    }
+    
+    .dark-mode .custom-alert-content {
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    }
+
+    .custom-alert-icon {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+    .custom-alert-icon.error { color: #f44336; }
+    .custom-alert-icon.warning { color: var(--accent-color); }
+    .custom-alert-icon.info { color: #2196F3; }
+
+    #alertTitle {
+      font-size: 1.5rem;
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: var(--text-color-light);
+    }
+
+    #alertMessage {
+      margin-bottom: 25px;
+      white-space: pre-wrap; /* Preserve line breaks for multi-line messages */
+      text-align: left;
+    }
+    
     /* Footer */
     .footer {
       background: #808080;
@@ -231,6 +292,15 @@
 
   <div class="calendar" id="calendar"></div>
 
+  <div id="customAlertModal" class="custom-alert-modal">
+    <div class="custom-alert-content">
+      <div class="custom-alert-icon" id="alertIcon"></div>
+      <h3 id="alertTitle"></h3>
+      <p id="alertMessage"></p>
+      <button id="alertCloseButton" class="action-button">OK</button>
+    </div>
+  </div>
+
   <footer class="footer">
     <div class="footer-top">
       <img src="/static/img/logo.png" alt="Footer Logo" class="footer-logo">
@@ -249,6 +319,13 @@
   const calendar = document.getElementById("calendar");
   const modeToggle = document.getElementById("modeToggle");
   const body = document.body;
+
+  // Custom Alert Variables
+  const customAlertModal = document.getElementById("customAlertModal");
+  const alertTitle = document.getElementById("alertTitle");
+  const alertMessage = document.getElementById("alertMessage");
+  const alertIcon = document.getElementById("alertIcon");
+  const alertCloseButton = document.getElementById("alertCloseButton");
 
   let totalPapers = 0;
   let currentPaperIndex = 0;
@@ -275,13 +352,48 @@
     modeToggle.innerHTML = currentTheme === 'dark-mode' ? '🌙' : '☀️';
   });
 
+  // Custom Alert Function
+  function showCustomAlert(message, type = 'info', title = 'Notification') {
+    alertMessage.innerHTML = message.replace(/\n/g, '<br>'); // Supports line breaks
+    alertTitle.textContent = title;
+    alertIcon.className = 'custom-alert-icon ' + type;
+    
+    let iconContent = '';
+    if (type === 'error' || type === 'warning') {
+      iconContent = '❌';
+    } else if (type === 'warning') {
+      iconContent = '⚠️';
+    } else {
+      iconContent = '💡';
+    }
+    alertIcon.textContent = iconContent;
+
+    customAlertModal.classList.add('show');
+    
+    // Auto-focus the button for accessibility
+    setTimeout(() => {
+        alertCloseButton.focus();
+    }, 10);
+  }
+
+  alertCloseButton.addEventListener('click', () => {
+    customAlertModal.classList.remove('show');
+  });
+
+  customAlertModal.addEventListener('click', (e) => {
+    if (e.target === customAlertModal) {
+      customAlertModal.classList.remove('show');
+    }
+  });
+
+
   let isEditing = false;
   let editingIndex = -1;
 
   function startWizard() {
     totalPapers = parseInt(document.getElementById("numInputs").value, 10);
     if (isNaN(totalPapers) || totalPapers < 1) {
-      alert("Please enter a valid number of papers.");
+      showCustomAlert("Please enter a valid number of papers.", 'error', 'Input Error');
       return;
     }
     currentPaperIndex = 0;
@@ -435,7 +547,42 @@
       div.querySelector(selector).addEventListener('change', fetchStudentCount);
       div.querySelector(selector).addEventListener('blur', fetchStudentCount);
     });
-    if (!isEditing) {
+    if (isEditing) {
+      // If editing, populate the form with existing data
+      const data = allPapersData[editingIndex];
+      dateInput.value = data.date;
+      div.querySelector('.paper-input').value = data.paperName;
+      div.querySelector('.year-input').value = data.year;
+      div.querySelector('.subject-input').value = data.subject;
+      div.querySelector('.stype-input').value = data.subjectType;
+      div.querySelector('.separation-input').value = data.separation;
+      div.querySelector('.student-count').textContent = `Total Students: ${data.studentCount || 0}`;
+      div.querySelector('.student-count').dataset.rolls = JSON.stringify(data._rolls || []);
+      
+      // Manually add room tags for editing
+      const selectedContainer = div.querySelector('.selected-rooms');
+      const roomSelect = div.querySelector('.room-options');
+
+      // Temporarily populate room options to get capacities
+      roomSelect.innerHTML = "";
+      let tempRooms = AllocatedRooms.find(entry => entry.date === data.date);
+      if (!tempRooms) {
+          tempRooms = { rooms: allAvailableRooms.map(r => ({ roomId: r.RoomId, capacity: r.TotalCapacity || r.totalCapacity })) };
+      }
+      
+      data.rooms.forEach(roomId => {
+          const roomData = tempRooms.rooms.find(r => r.roomId === roomId);
+          const capacity = roomData ? roomData.capacity : (allAvailableRooms.find(r => r.RoomId === roomId)?.TotalCapacity || allAvailableRooms.find(r => r.RoomId === roomId)?.totalCapacity || "");
+          
+          const tag = document.createElement("span");
+          tag.classList.add("tag");
+          tag.setAttribute("data-room", roomId);
+          tag.setAttribute("data-capacity", capacity);
+          tag.innerHTML = `${roomId} <span class="remove" onclick="removeTag(event, this)">❌</span>`;
+          selectedContainer.appendChild(tag);
+      });
+      
+    } else {
       fetchStudentCount();
     }
   }
@@ -453,7 +600,8 @@
     paper.rooms.forEach((roomId, j) => {
       const room = dateEntry.rooms.find(r => r.roomId === roomId);
       if (room) {
-        room.capacity += paper.usedSeatsPerRoom[j] || 0;
+        // Re-add the used seats back to the room's capacity
+        room.capacity = parseInt(room.capacity) + parseInt(paper.usedSeatsPerRoom[j] || 0);
       }
     });
   }
@@ -516,7 +664,7 @@
     let lines = allPapersData.map(p => {
       return `${p.date}#${p.rooms.join(",")}!${p.paperName}@${p.year}%${p.subject}^${p.subjectType}$${p.separation}`;
     });
-    if (lines.length === 0) { alert("No data to submit."); return; }
+    if (lines.length === 0) { showCustomAlert("No data to submit.", 'info', 'No Data'); return; }
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
     const formData = new FormData();
     formData.append("file", blob, "input.txt");
@@ -577,6 +725,7 @@
         day.onclick = () => {
           activeInput.value = `${d}/${month + 1}/${year}`;
           activeInput.dispatchEvent(new Event('change'));
+          calendar.style.display = "none"; // Close calendar on date selection
         };
       }
       daysGrid.appendChild(day);
@@ -623,7 +772,7 @@
     const separation = parseInt(separationInput.value, 10);
 
     if (!dateStr) {
-      alert("❌ Error: Please select a date.");
+      showCustomAlert("❌ Error: Please select a date.", 'error', 'Input Error');
       return;
     }
     const dateParts = dateStr.split('/');
@@ -631,15 +780,15 @@
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (selectedDate < today) {
-      alert("❌ Error: You cannot select a past date.");
+      showCustomAlert("❌ Error: You cannot select a past date.", 'error', 'Date Error');
       return;
     }
     if (!paperName) {
-      alert("❌ Error: Paper Name cannot be empty.");
+      showCustomAlert("❌ Error: Paper Name cannot be empty.", 'error', 'Input Error');
       return;
     }
     if (selectedRoomTags.length === 0) {
-      alert("❌ Error: Please select at least one room.");
+      showCustomAlert("❌ Error: Please select at least one room.", 'error', 'Room Selection Error');
       return;
     }
     let studentCountMatch = (studentCountSpan.textContent || "0").match(/\d+/);
@@ -657,26 +806,43 @@
         studentCount = original.studentCount;
         _rolls = original._rolls;
       }
+      // De-allocate rooms before re-allocating (important for editing)
+      deAllocatePaper(editingIndex);
     }
     if (studentCount > 0) {
       let totalChosenCapacity = 0;
       selectedRoomTags.forEach(tag => {
-        totalChosenCapacity += parseInt(tag.getAttribute("data-capacity"), 10);
+        // Need to get the *current* available capacity for the chosen date if it exists
+        const roomId = tag.getAttribute("data-room");
+        const dateEntry = AllocatedRooms.find(entry => entry.date === dateStr);
+        let currentRoomCapacity;
+
+        if (dateEntry) {
+            const roomInDate = dateEntry.rooms.find(r => r.roomId === roomId);
+            currentRoomCapacity = roomInDate ? parseInt(roomInDate.capacity) : (allAvailableRooms.find(r => r.RoomId === roomId)?.TotalCapacity || allAvailableRooms.find(r => r.RoomId === roomId)?.totalCapacity);
+        } else {
+            currentRoomCapacity = allAvailableRooms.find(r => r.RoomId === roomId)?.TotalCapacity || allAvailableRooms.find(r => r.RoomId === roomId)?.totalCapacity;
+        }
+
+        totalChosenCapacity += parseInt(currentRoomCapacity, 10) || 0;
       });
+      
       const requiredCapacity = studentCount * (separation === 1 ? 4 : 9);
       if (totalChosenCapacity < requiredCapacity) {
-        alert(`❌ Capacity Error:\n\n- Students: ${studentCount}\n- Separation requires capacity: ${requiredCapacity}\n- You have only selected rooms with total capacity: ${totalChosenCapacity}\n\nPlease select more or larger rooms.`);
+        showCustomAlert(`❌ Capacity Error:\n\n- Students: ${studentCount}\n- Separation requires capacity: ${requiredCapacity}\n- Available capacity in selected rooms: ${totalChosenCapacity}\n\nPlease select more or larger rooms.`, 'error', 'Capacity Mismatch');
         return;
       }
     }
     const currentDateStr = dateStr;
     const currentRooms = Array.from(selectedRoomTags).map(tag => ({
       roomId: tag.getAttribute("data-room"),
-      capacity: tag.getAttribute("data-capacity")
+      // Capacity attribute from tag is now unreliable, we use the room list
+      // capacity: tag.getAttribute("data-capacity")
     }));
     let VirtalStudentCount = studentCount;
     let usedSeatsPerRoom = [];
-    const dateEntry = AllocatedRooms.find(entry => entry.date === currentDateStr);
+    let dateEntry = AllocatedRooms.find(entry => entry.date === currentDateStr);
+    
     if (dateEntry) {
       const prevRooms = dateEntry.rooms;
       const updatedRooms = prevRooms.map(room => {
@@ -761,6 +927,7 @@
   function renderSummaryRow(data, index) {
     const card = document.createElement('div');
     card.classList.add('summary-card');
+    card.setAttribute('data-index', index); // Add index for easy identification
     card.innerHTML = `
       <div class="summary-card-header">
         <span>${data.paperName}</span>
@@ -824,21 +991,47 @@
       allPapersData.splice(last.index, 0, last.paper);
       //increase papercount back 
       totalPapers++;
+      
+      // Re-allocate capacity to rooms (same logic as handleNextClick but for restoring)
       let VirtalStudentCount = last.paper.studentCount;
       let usedSeatsPerRoom = [];
       const currentDateStr = last.paper.date;
       const currentRooms = last.paper.rooms.map(roomId => ({
         roomId,
-        capacity: ''
       }));
       const dateEntry = AllocatedRooms.find(entry => entry.date === currentDateStr);
+      
+      // Find the original total capacity for rooms on this date *before* this paper was first added
+      // This is a complex step, simpler approach:
+      // 1. Find the rooms in AllocatedRooms for the date.
+      // 2. Temporarily set their capacities back to their state *before* this paper was removed (i.e., add back the usedSeatsPerRoom).
+      // 3. Re-run the allocation logic for this single paper.
+      
+      const paperRooms = last.paper.rooms;
+      const usedSeats = last.paper.usedSeatsPerRoom;
+      const separation = last.paper.separation;
+
+      // Reverse the capacity effect of the removal first
       if (dateEntry) {
-        const prevRooms = dateEntry.rooms;
-        const updatedRooms = prevRooms.map(room => {
+          dateEntry.rooms.forEach(room => {
+              const indexInPaper = paperRooms.indexOf(room.roomId);
+              if (indexInPaper !== -1) {
+                  // Add back the capacity this paper was using
+                  room.capacity = parseInt(room.capacity) + parseInt(usedSeats[indexInPaper]);
+              }
+          });
+      }
+      
+      // Now re-allocate the paper using the same logic as handleNextClick
+      VirtalStudentCount = last.paper.studentCount;
+      usedSeatsPerRoom = [];
+      
+      if (dateEntry) {
+        dateEntry.rooms = dateEntry.rooms.map(room => {
           const isCurrent = currentRooms.find(r => r.roomId === room.roomId);
           if (isCurrent) {
             const oldCap = parseInt(room.capacity);
-            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, oldCap);
+            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, separation, oldCap);
             const used = oldCap - remaining;
             usedSeatsPerRoom.push(used);
             VirtalStudentCount = leftStudents;
@@ -847,46 +1040,34 @@
             return room;
           }
         });
-        currentRooms.forEach(room => {
-          if (!updatedRooms.find(r => r.roomId === room.roomId)) {
-            const availRoom = allAvailableRooms.find(r => r.RoomId === room.roomId);
-            const origCapacity = parseInt(availRoom.TotalCapacity || availRoom.totalCapacity, 10);
-            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, origCapacity);
-            const used = origCapacity - remaining;
-            usedSeatsPerRoom.push(used);
-            VirtalStudentCount = leftStudents;
-            updatedRooms.push({
-              roomId: room.roomId,
-              capacity: remaining
-            });
-          }
-        });
-        dateEntry.rooms = updatedRooms;
       } else {
-        const updatedRooms = allAvailableRooms.map(room => {
-          const availRoom = currentRooms.find(r => r.roomId === room.RoomId);
-          if (availRoom) {
-            const origCapacity = parseInt(room.TotalCapacity || room.totalCapacity, 10);
-            const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, last.paper.separation, origCapacity);
-            const used = origCapacity - remaining;
-            usedSeatsPerRoom.push(used);
-            VirtalStudentCount = leftStudents;
-            return {
-              roomId: room.RoomId,
-              capacity: remaining
-            };
-          } else {
-            return {
-              roomId: room.RoomId,
-              capacity: room.totalCapacity || room.TotalCapacity
-            };
-          }
-        });
-        AllocatedRooms.push({
-          date: currentDateStr,
-          rooms: updatedRooms
-        });
+          // Should not happen if data integrity is maintained, but included for completeness
+          const updatedRooms = allAvailableRooms.map(room => {
+            const availRoom = currentRooms.find(r => r.roomId === room.RoomId);
+            if (availRoom) {
+              const origCapacity = parseInt(room.TotalCapacity || room.totalCapacity, 10);
+              const [remaining, leftStudents] = remainingCapacityCounter(VirtalStudentCount, separation, origCapacity);
+              const used = origCapacity - remaining;
+              usedSeatsPerRoom.push(used);
+              VirtalStudentCount = leftStudents;
+              return {
+                roomId: room.RoomId,
+                capacity: remaining
+              };
+            } else {
+              return {
+                roomId: room.RoomId,
+                capacity: room.totalCapacity || room.TotalCapacity
+              };
+            }
+          });
+          AllocatedRooms.push({
+            date: currentDateStr,
+            rooms: updatedRooms
+          });
       }
+      
+      // Update the paper object with new allocation data
       last.paper.usedSeatsPerRoom = usedSeatsPerRoom;
       
       // Don't change totalPapers or currentPaperIndex drastically
@@ -908,7 +1089,7 @@
     const rollsByYear = {};
     for (const paperData of allPapersData) {
       if (papers.has(paperData.paperName)) {
-        alert(`❌ Duplicate paper name found: ${paperData.paperName}`);
+        showCustomAlert(`❌ Duplicate paper name found: ${paperData.paperName}`, 'error', 'Validation Error');
         return false;
       }
       papers.add(paperData.paperName);
@@ -918,7 +1099,7 @@
       }
       for (const roll of paperData._rolls) {
         if (rollsByYear[year].has(roll)) {
-          alert(`❌ Roll number conflict detected for year ${year}: Student ${roll} is in multiple papers.`);
+          showCustomAlert(`❌ Roll number conflict detected for year ${year}: Student ${roll} is in multiple papers.`, 'error', 'Validation Error');
           return false;
         }
         rollsByYear[year].add(roll);

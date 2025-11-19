@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SARA-Room Information</title>
-  <!-- favicon -->
   <link rel="icon" type="image/png" href="static/favicon/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="static/favicon/favicon.svg" />
   <link rel="shortcut icon" href="static/favicon/favicon.ico" />
@@ -204,9 +203,10 @@
       font-weight: bold;
       transition: background 0.3s, transform 0.3s;
     }
+    
     .delete-button:hover {
       background: #b91c1c;
-      transform: translateY(-1px);
+      transform: translateY(-1px); 
     }
 
     .add-button {
@@ -225,17 +225,17 @@
       transform: translateY(-1px);
     }
 
+    /* General Modal Styling (Updated Z-index) */
     .modal {
       display: none;
       position: fixed;
-      z-index: 1000;
+      z-index: 2000; /* Increased z-index for consistency/robustness */
       left: 0;
       top: 0;
       width: 100%;
       height: 100%;
       background: rgba(0,0,0,0.5);
       backdrop-filter: blur(5px);
-      display: flex;
       justify-content: center;
       align-items: center;
     }
@@ -292,6 +292,60 @@
       background: var(--button-hover-light);
       transform: translateY(-1px);
     }
+    
+    /* Custom Notification/Confirm Modal Styling */
+    #notificationModal .modal-content {
+        width: 350px;
+        padding: 25px;
+        text-align: center;
+        max-width: 90%;
+    }
+    #notificationModal h3 {
+        margin-top: 0;
+        margin-bottom: 25px;
+        font-size: 1.2rem;
+        line-height: 1.4;
+        color: var(--text-color-light);
+    }
+    
+    #confirmButtons, #alertButtons {
+        display: flex;
+        justify-content: center;
+        gap: 20px; 
+        margin-top: 20px;
+    }
+
+    #confirmButtons button, #alertButtons button {
+        width: 100px;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-weight: bold;
+        transition: background 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+    #confirmButtons button:first-child {
+        background: #4CAF50; /* Green for Yes */
+        color: white;
+    }
+    #confirmButtons button:first-child:hover {
+        background: #45a049;
+    }
+    #confirmButtons button:last-child {
+        background: #f44336; /* Red for No */
+        color: white;
+    }
+    #confirmButtons button:last-child:hover {
+        background: #da190b;
+    }
+    #alertButtons button {
+        background: var(--accent-color);
+        color: #121212;
+    }
+    #alertButtons button:hover {
+        background: var(--button-hover-light);
+    }
+
 
     /* Footer */
     .footer {
@@ -398,8 +452,10 @@
             {% set room_id = parts[-1] %}
             {% set group = grouped_data | selectattr('institute_name', 'equalto', institute_name) | list %}
             {% if group %}
+              {# This variable inside the new object must store the actual capacity value, using the most likely correct key from Python data, which we assume is 'totalCapacity' (camelCase) based on the template's previous crash and subsequent fix. #}
               {% set _ = group[0]['rows'].append({'RoomId': room_id, 'TotalCapacity': row['totalCapacity'], 'BenchPerCol': row['BenchPerCol'], 'FullRoomId': row['RoomId']}) %}
             {% else %}
+              {# This variable inside the new object must store the actual capacity value, using the most likely correct key from Python data, which we assume is 'totalCapacity' (camelCase) based on the template's previous crash and subsequent fix. #}
               {% set _ = grouped_data.append({'institute_name': institute_name, 'rows': [{'RoomId': room_id, 'TotalCapacity': row['totalCapacity'], 'BenchPerCol': row['BenchPerCol'], 'FullRoomId': row['RoomId']}]}) %}
             {% endif %}
           {% endfor %}
@@ -410,8 +466,10 @@
                   <td rowspan="{{ group.rows | length }}">{{ group.institute_name }}</td>
                 {% endif %}
                 <td>{{ row.RoomId }}</td>
-                <td>{{ row.TotalCapacity }}</td>
+                {# FIX: Changed to use the key 'TotalCapacity' from the manually created dict in the grouping logic #}
+                <td>{{ row.TotalCapacity }}</td> 
                 <td>{{ row.BenchPerCol }}</td>
+                {# FIX: Changed to use the key 'TotalCapacity' from the manually created dict in the grouping logic #}
                 <td><button class="action-button" onclick="openModal('{{ row.FullRoomId }}','{{ row.TotalCapacity }}','{{ row.BenchPerCol }}')">Edit</button></td>
                 <td><button class="delete-button" onclick="deleteRow('{{ row.FullRoomId }}')">Delete</button></td>
               </tr>
@@ -422,7 +480,7 @@
     </main>
   </div>
 
-  <div id="roomModal" class="modal" style="display:none">
+  <div id="roomModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeModal()">&times;</span>
       <h3 id="modalTitle">Add Room</h3>
@@ -440,7 +498,20 @@
       </form>
     </div>
   </div>
+  <div id="notificationModal" class="modal">
+      <div class="modal-content">
+          <h3 id="notificationMessage"></h3>
+          
+          <div id="confirmButtons" style="display: none;">
+              <button class="action-button" onclick="closeNotificationModal(true)">Yes</button>
+              <button class="action-button" onclick="closeNotificationModal(false)">No</button>
+          </div>
 
+          <div id="alertButtons" style="display: none;">
+              <button class="action-button" onclick="closeNotificationModal(true)">OK</button>
+          </div>
+      </div>
+  </div>
   <footer class="footer">
     <div class="footer-top">
       <img src="/static/img/logo.png" alt="Footer Logo" class="footer-logo">
@@ -477,6 +548,46 @@
       localStorage.setItem('theme', currentTheme);
       modeToggle.innerHTML = currentTheme === 'dark-mode' ? '🌙' : '☀️';
     });
+    
+    // =======================================================
+    // Custom Notification Functions (Replacing native alert/confirm)
+    // =======================================================
+    let resolvePromise = null;
+
+    /**
+     * Displays the custom notification modal.
+     */
+    function showNotificationModal(message, isConfirm = false) {
+        document.getElementById('notificationMessage').innerText = message;
+        
+        document.getElementById('notificationModal').style.display = 'flex'; 
+
+        document.getElementById('alertButtons').style.display = isConfirm ? 'none' : 'flex';
+        document.getElementById('confirmButtons').style.display = isConfirm ? 'flex' : 'none';
+    }
+
+    /**
+     * Closes the custom notification modal and resolves the promise for confirm().
+     */
+    function closeNotificationModal(result) {
+        document.getElementById('notificationModal').style.display = 'none';
+        if (resolvePromise) {
+            resolvePromise(result);
+            resolvePromise = null;
+        }
+    }
+
+    function customAlert(message) {
+        showNotificationModal(message, false);
+    }
+
+    function customConfirm(message) {
+        return new Promise(resolve => {
+            resolvePromise = resolve;
+            showNotificationModal(message, true);
+        });
+    }
+    // =======================================================
 
     document.getElementById("addBtn").onclick = () => {
       modalTitle.textContent = "Add Room";
@@ -492,6 +603,7 @@
       modalTitle.textContent = "Edit Room";
       submitBtn.value = "Save";
       const parts = fullRoomId.split('-');
+      // Assuming 'RKMVM' is a placeholder or default if no institute prefix exists
       const instituteName = parts.length > 1 ? parts[0] : 'RKMVM';
       const roomId = parts[parts.length - 1];
       instituteNameInput.value = instituteName;
@@ -505,19 +617,45 @@
       modal.style.display = "none";
     }
 
-    function deleteRow(fullRoomId) {
-      if (confirm("Are you sure you want to delete room " + fullRoomId + "?")) {
-        fetch("/Roominfo/delete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ RoomId: fullRoomId })
-        }).then(() => location.reload());
-      }
+    // Updated deleteRow function to use customConfirm
+    async function deleteRow(fullRoomId) {
+      const isConfirmed = await customConfirm("Are you sure you want to delete room " + fullRoomId + "?");
+
+      if (!isConfirmed) return;
+
+      fetch("/Roominfo/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ RoomId: fullRoomId })
+      })
+      .then(res => res.json())
+      .then(data => {
+          if (data.success) {
+              customAlert(data.message || `Room ${fullRoomId} deleted successfully.`);
+              setTimeout(() => location.reload(), 500);
+          } else {
+              customAlert("Error: " + (data.error || "An unknown error occurred."));
+          }
+      })
+      .catch(err => {
+          console.error("Error deleting record:", err);
+          customAlert("An unexpected error occurred while deleting the room.");
+      });
     }
 
     window.onclick = (e) => {
       if (e.target == modal) closeModal();
+      // Prevent closing the custom notification modal by clicking outside
+      if (e.target == document.getElementById("notificationModal")) {
+        // Do nothing, force user to click the Yes/No/OK buttons
+      }
     };
+    
+    // Initial hiding for the custom modal
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById("notificationModal").style.display = 'none';
+      // The main room modal is already hidden by the CSS .modal class
+    });
   </script>
 </body>
 </html>

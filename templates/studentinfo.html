@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <title>SARA -- Student Info</title>
-    <!-- favicon -->
     <link rel="icon" type="image/png" href="static/favicon/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="static/favicon/favicon.svg" />
     <link rel="shortcut icon" href="static/favicon/favicon.ico" />
@@ -190,28 +189,55 @@
             transform: translateY(-1px);
         }
 
-        /* Popup modal */
+        /* --- FIX: Delete Button Styling --- */
+        .deleteBtn {
+            /* Copied original inline styles to CSS */
+            color: white;
+            height: 0.8cm;
+            width: 1.5cm;
+            background-color: #ff1800;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold; 
+            
+            /* FIX 1 & 2: Added cursor and transition for smooth movement */
+            cursor: pointer;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .deleteBtn:hover {
+            /* FIX 3: Matched movement with action-button */
+            background-color: #da190b; /* Slightly darker red for hover */
+            transform: translateY(-1px);
+        }
+        /* --- END FIX --- */
+
+        /* General Modal Styling (Crucial) */
         .modal {
-            display: none;
-            visiblity: hidden;
+            display: none; /* Initially hidden */
             position: fixed;
-            z-index: 1000;
+            z-index: 2000; 
             left: 0; top: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             backdrop-filter: blur(5px);
-            display: flex;
             justify-content: center;
             align-items: center;
         }
         .modal-content {
             background: var(--card-background-light);
             padding: 30px;
-            border-radius: 10px;
-            width: 450px;
-            box-shadow: 0px 5px 20px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
             position: relative;
+            text-align: center;
         }
+        .dark-mode .modal-content {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        }
+
         .close {
             position: absolute;
             top: 10px;
@@ -257,6 +283,7 @@
             font-size: 30px;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            z-index: 10;
             transition: all 0.3s;
         }
         #addBtn:hover {
@@ -310,6 +337,57 @@
           text-decoration: underline;
         }
 
+        /* Custom Notification/Confirm Modal Styling */
+        #notificationModal .modal-content {
+            width: 350px;
+            padding: 25px;
+            text-align: center;
+        }
+        #notificationModal h3 {
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+            line-height: 1.4;
+            color: var(--text-color-light);
+        }
+        
+        #confirmButtons, #alertButtons {
+            display: flex;
+            justify-content: center;
+            gap: 20px; 
+            margin-top: 20px;
+        }
+
+        #confirmButtons button, #alertButtons button {
+            width: 100px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        #confirmButtons button:first-child {
+            background: #4CAF50; /* Green for Yes */
+            color: white;
+        }
+        #confirmButtons button:first-child:hover {
+            background: #45a049;
+        }
+        #confirmButtons button:last-child {
+            background: #f44336; /* Red for No */
+            color: white;
+        }
+        #confirmButtons button:last-child:hover {
+            background: #da190b;
+        }
+        #alertButtons button {
+            background: var(--accent-color);
+            color: #121212;
+        }
+        #alertButtons button:hover {
+            background: var(--button-hover-light);
+        }
+
+
         @media (max-width: 768px) {
           .footer-top {
             flex-direction: column;
@@ -356,10 +434,10 @@
                 {% for row in data %}
                     <tr>
                         <td>
-                            {{ row['InstituteName'] }}
+                            {{ row[0] }}
                         </td>
                         <td>
-                            {{ row['Year'] }}
+                            {{ row[1] }}
                         </td>
                         <td>
                             [BLOB DATA]
@@ -368,12 +446,7 @@
                             <button class="action-button" onclick="openModal('{{ row[0] }}', '{{ row[1] }}')">Edit / Add</button>
                         </td>
                         <td>
-                            <button onclick="deleteStudent('{{ row['Year'] }}')" class="deleteBtn" style="color: white;
-                                                                                                    height: 0.8cm;
-                                                                                                    width: 1.5cm;
-                                                                                                    background-color: #ff1800;
-                                                                                                    border: none;
-                                                                                                    border-radius: 5px;">Delete</button>
+                            <button onclick="deleteStudent('{{ row[1] }}')" class="deleteBtn">Delete</button>
                         </td>
 
                     </tr>
@@ -382,7 +455,7 @@
         </main>
     </div>
 
-    <div id="editModal" class="modal" style="display:none">
+    <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h3>Edit/Add Student Info</h3>
@@ -399,7 +472,20 @@
             </form>
         </div>
     </div>
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <h3 id="notificationMessage"></h3>
+            
+            <div id="confirmButtons" style="display: none;">
+                <button class="action-button" onclick="closeNotificationModal(true)">Yes</button>
+                <button class="action-button" onclick="closeNotificationModal(false)">No</button>
+            </div>
 
+            <div id="alertButtons" style="display: none;">
+                <button class="action-button" onclick="closeNotificationModal(true)">OK</button>
+            </div>
+        </div>
+    </div>
     <button id="addBtn" onclick="openModal('', '')">+</button>
 
     <footer class="footer">
@@ -422,9 +508,56 @@
             body.classList.add(savedTheme);
             modeToggle.innerHTML = savedTheme === 'dark-mode' ? '🌙' : '☀️';
         }
-        // deletion of student data
-        function deleteStudent(year) {
-            if (!confirm(`Are you sure you want to delete record for ${year}?`)) return;
+
+        // =======================================================
+        // Custom Notification Functions (Replacing native alert/confirm)
+        // =======================================================
+        let resolvePromise = null;
+
+        /**
+         * Displays the custom notification modal.
+         */
+        function showNotificationModal(message, isConfirm = false) {
+            document.getElementById('notificationMessage').innerText = message;
+            
+            // Set display to 'flex' to show the modal
+            document.getElementById('notificationModal').style.display = 'flex'; 
+
+            // Control button visibility
+            document.getElementById('alertButtons').style.display = isConfirm ? 'none' : 'flex';
+            document.getElementById('confirmButtons').style.display = isConfirm ? 'flex' : 'none';
+        }
+
+        /**
+         * Closes the custom notification modal and resolves the promise for confirm().
+         */
+        function closeNotificationModal(result) {
+            // Set display to 'none' to hide the modal
+            document.getElementById('notificationModal').style.display = 'none';
+            if (resolvePromise) {
+                resolvePromise(result);
+                resolvePromise = null;
+            }
+        }
+
+        function customAlert(message) {
+            showNotificationModal(message, false);
+        }
+
+        function customConfirm(message) {
+            return new Promise(resolve => {
+                resolvePromise = resolve;
+                showNotificationModal(message, true);
+            });
+        }
+        // =======================================================
+
+        // Deletion of student data - Correctly uses async/await
+        async function deleteStudent(year) {
+            // Await the response from the custom confirm modal
+            const isConfirmed = await customConfirm(`Are you sure you want to delete the record for year ${year}?`);
+
+            if (!isConfirmed) return;
 
             fetch("/Studentinfo/delete", {
                 method: "POST",
@@ -436,14 +569,17 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                alert(data.message);
-                location.reload(); // refresh to show updated table
+                customAlert(data.message);
+                setTimeout(() => location.reload(), 500);
                 } else {
-                alert("Error: " + data.error);
+                customAlert("Error: " + data.error);
                 }
             })
-            .catch(err => console.error("Error deleting record:", err));
-            }
+            .catch(err => {
+                console.error("Error deleting record:", err);
+                customAlert("An unexpected error occurred while deleting the record.");
+            });
+        }
 
 
         // Event listener for the mode toggle button
@@ -454,7 +590,7 @@
             modeToggle.innerHTML = currentTheme === 'dark-mode' ? '🌙' : '☀️';
         });
 
-        // Modal functionality
+        // Modal functionality for edit/add
         function openModal(institute, year) {
             document.getElementById("editInstituteName").value = institute;
             document.getElementById("editYear").value = year;
@@ -468,6 +604,10 @@
         window.onclick = function(event) {
             if (event.target == document.getElementById("editModal")) {
                 closeModal();
+            }
+            // Prevent closing the custom notification modal by clicking outside
+            if (event.target == document.getElementById("notificationModal")) {
+                // Do nothing, force user to click the Yes/No/OK buttons
             }
         }
     </script>
