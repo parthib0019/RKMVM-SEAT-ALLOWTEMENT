@@ -427,5 +427,5 @@ def start_flask(**kwargs):
 
 if __name__ == "__main__":
     webview.settings['ALLOW_DOWNLOADS'] = True
-    webview.create_window("SARA", app)
+    webview.create_window("SARA", app, height=900, width=1200)
     webview.start(icon="static/img/SARA-FAVICON.ico")

@@ -434,16 +434,16 @@
                 {% for row in data %}
                     <tr>
                         <td>
-                            {{ row[0] }}
+                            {{ row['InstituteName'] }}
                         </td>
                         <td>
-                            {{ row[1] }}
+                            {{ row['Year'] }}
                         </td>
                         <td>
                             [BLOB DATA]
                         </td>
                         <td>
-                            <button class="action-button" onclick="openModal('{{ row[0] }}', '{{ row[1] }}')">Edit / Add</button>
+                            <button class="action-button" onclick="openModal('{{ row['InstituteName'] }}', '{{ row['Year'] }}')">Edit / Add</button>
                         </td>
                         <td>
                             <button onclick="deleteStudent('{{ row[1] }}')" class="deleteBtn">Delete</button>
