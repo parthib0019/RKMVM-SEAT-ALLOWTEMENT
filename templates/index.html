@@ -1083,30 +1083,74 @@
       }
     }
   }
+function validateAllPapers() {
+  const rollsByYear = {};
 
-  function validateAllPapers() {
-    const papers = new Set();
-    const rollsByYear = {};
-    for (const paperData of allPapersData) {
-      if (papers.has(paperData.paperName)) {
-        showCustomAlert(`❌ Duplicate paper name found: ${paperData.paperName}`, 'error', 'Validation Error');
-        return false;
-      }
-      papers.add(paperData.paperName);
-      const year = paperData.year;
-      if (!rollsByYear[year]) {
-        rollsByYear[year] = new Set();
-      }
-      for (const roll of paperData._rolls) {
-        if (rollsByYear[year].has(roll)) {
-          showCustomAlert(`❌ Roll number conflict detected for year ${year}: Student ${roll} is in multiple papers.`, 'error', 'Validation Error');
-          return false;
-        }
-        rollsByYear[year].add(roll);
+  // First pass: collect all rolls per year and track which paper they appear in
+  for (const paperData of allPapersData) {
+    const year = paperData.year;
+    if (!rollsByYear[year]) {
+      rollsByYear[year] = {};
+    }
+    for (const roll of paperData._rolls) {
+      const rollNum = parseInt(roll, 10);
+      if (isNaN(rollNum)) continue;
+
+      if (rollsByYear[year][rollNum]) {
+        // Already seen → conflict
+        rollsByYear[year][rollNum].count += 1;
+        rollsByYear[year][rollNum].papers.push(paperData.paperName);
+      } else {
+        rollsByYear[year][rollNum] = {
+          count: 1,
+          papers: [paperData.paperName]
+        };
       }
     }
-    return true;
   }
+
+  // Second pass: find conflicts and format nicely
+  const conflicts = [];
+
+  for (const [year, rollMap] of Object.entries(rollsByYear)) {
+    const conflictingRolls = Object.keys(rollMap)
+      .map(Number)
+      .filter(roll => rollMap[roll].count > 1)
+      .sort((a, b) => a - b);
+
+    if (conflictingRolls.length > 0) {
+      // Group into ranges: 219-245, 254, 297
+      const ranges = [];
+      let start = conflictingRolls[0];
+      let prev = conflictingRolls[0];
+
+      for (let i = 1; i <= conflictingRolls.length; i++) {
+        const curr = conflictingRolls[i];
+        if (curr !== prev + 1) {
+          // End of range
+          if (prev === start) {
+            ranges.push(start.toString());
+          } else {
+            ranges.push(`${start}-${prev}`);
+          }
+          start = curr;
+        }
+        prev = curr || prev;
+      }
+
+      conflicts.push(`Year <strong>${year}</strong>: ${ranges.join(', ')}`);
+    }
+  }
+
+  if (conflicts.length > 0) {
+    const message = `Roll number conflict detected!\n\nThe following students appear in multiple papers:\n\n${conflicts.join('\n')}\n\nPlease fix before proceeding.`;
+    
+    showCustomAlert(message, 'error', 'Duplicate Roll Numbers');
+    return false;
+  }
+
+  return true;
+}
   </script>
 </body>
 </html>

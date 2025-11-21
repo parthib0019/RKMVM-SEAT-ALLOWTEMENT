@@ -262,23 +262,25 @@ def export_pdf(pdf_path, totalRooms):
         # --- Styling ---
         style_commands = []
 
-        for r, row in enumerate(data):
-            for c, cell in enumerate(row):
-                if c == 0:  # row number column → NO border
-                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
-                elif cell is None:  # no seat → no border
-                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
-                elif cell == "   ":  # gutter → no border
-                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.white))
-                else:  # filled seat or empty seat → border
-                    style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
+        
 
         # Merge gutters
         for c in range(1, num_cols):
             if all(row[c] == "   " for row in data):
                 style_commands.append(("SPAN", (c, 0), (c, len(data)-1)))
-                style_commands.append(("BOX", (c, 0), (c, len(data)-1), 0, colors.white))
+                style_commands.append(("BOX", (c, 0), (c, len(data)-1), 0, colors.transparent))
                 style_commands.append(("BACKGROUND", (c, 0), (c, len(data)-1), colors.white))
+
+        for r, row in enumerate(data):
+            for c, cell in enumerate(row):
+                if c == 0:  # row number column → NO border
+                    style_commands.append(("BOX", (c, r), (c, r), 0.5, colors.white))
+                elif cell is None:  # no seat → no border
+                    style_commands.append(("BOX", (c, r), (c, r), 0, colors.transparent))
+                elif cell == "   ":  # gutter → no border
+                    style_commands.append(("BOX", (c, r), (c, r), 0.5, colors.transparent))
+                else:  # filled seat or empty seat → border
+                    style_commands.append(("GRID", (c, r), (c, r), 0.5, colors.black))
 
         style_commands.append(("ALIGN", (0, 0), (-1, -1), "CENTER"))
         style_commands.append(("VALIGN", (0, 0), (-1, -1), "MIDDLE"))
