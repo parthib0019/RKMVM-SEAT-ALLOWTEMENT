@@ -417,10 +417,11 @@ def LogIn():
     if request.method == "POST":
         GivenPassword = request.form.get('password')
         ActualPassword = ""
-        with open("static/Authentication.json", 'r') as f:
+        filename = os.path.join(app.static_folder, 'Authentication.json')
+        with open(filename, 'r') as f:
             data = json.load(f)
             ActualPassword = data.get('password','')
-        print(ActualPassword, GivenPassword)
+        
         if ActualPassword == GivenPassword:
             IsLoggedIn = True
         else:
