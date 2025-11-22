@@ -12,9 +12,8 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from io import BytesIO
-from flaskwebgui import FlaskUI
-import platform
 import webview
+import json
 
 # --- Custom Database Imports ---
 from database import get_db_connection, init_db
@@ -49,6 +48,10 @@ def get_db():
     if 'db' not in g:
         g.db = get_db_connection()
     return g.db
+
+
+#Authentication Connectivty:           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+IsLoggedIn  = False
 
 # ------------------ Input Parsing (No Changes) ------------------
 def parse_line(line: str):
@@ -308,10 +311,13 @@ def Roominfo():
             cursor.execute("INSERT INTO RoomInfo (RoomId, TotalCapacity, BenchPerCol) VALUES (?, ?, ?)", (room_id, capacity, benches))
         conn.commit()
         return redirect("/Roominfo")
-
-    cursor.execute("SELECT * FROM RoomInfo")
-    rooms = [dict(row) for row in cursor.fetchall()]
-    return render_template("roominfo.html", data=rooms)
+    
+    if IsLoggedIn == True:
+        cursor.execute("SELECT * FROM RoomInfo")
+        rooms = [dict(row) for row in cursor.fetchall()]
+        return render_template("roominfo.html", data=rooms)
+    else:
+        return redirect('/LoginBar')
 
 @app.route("/Roominfo/delete", methods=["POST"])
 def delete_room():
@@ -342,9 +348,12 @@ def Studentinfo():
         return redirect("/Studentinfo")
     
     # Only select columns needed for display (exclude BLOB)
-    cursor.execute("SELECT InstituteName, Year FROM StudentInfo")
-    student_records = [dict(row) for row in cursor.fetchall()]
-    return render_template("studentinfo.html", data=student_records, columns=["InstituteName", "Year","StudentData"])
+    if IsLoggedIn:
+        cursor.execute("SELECT InstituteName, Year FROM StudentInfo")
+        student_records = [dict(row) for row in cursor.fetchall()]
+        return render_template("studentinfo.html", data=student_records, columns=["InstituteName", "Year","StudentData"])
+    else:
+        return redirect('/LoginBar')
 
 @app.route("/Studentinfo/delete", methods=["POST"])
 def delete_studentinfo_route():
@@ -393,19 +402,44 @@ def index():
         pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], "All_Seating_Allotments.pdf")
         export_pdf(pdf_path, totalRooms)
         return render_template("pdf-viewer.html", pdf_files=["All_Seating_Allotments.pdf"])
+    
+    if IsLoggedIn :
+        conn = get_db(); cursor = conn.cursor()
+        cursor.execute("SELECT RoomId, TotalCapacity FROM RoomInfo")
+        rooms = [dict(row) for row in cursor.fetchall()]
+        return render_template("index.html", rooms=rooms)
+    else:
+        return redirect('/LoginBar')
 
-    conn = get_db(); cursor = conn.cursor()
-    cursor.execute("SELECT RoomId, TotalCapacity FROM RoomInfo")
-    rooms = [dict(row) for row in cursor.fetchall()]
-    return render_template("index.html", rooms=rooms)
+@app.route("/LoginBar", methods=["GET", "POST"])
+def LogIn():
+    global IsLoggedIn
+    if request.method == "POST":
+        GivenPassword = request.form.get('password')
+        ActualPassword = ""
+        with open("static/Authentication.json", 'r') as f:
+            data = json.load(f)
+            ActualPassword = data.get('password','')
+        print(ActualPassword, GivenPassword)
+        if ActualPassword == GivenPassword:
+            IsLoggedIn = True
+        else:
+            return render_template('login.html', error="wrong password")
+        return redirect('/')
+    if IsLoggedIn:
+        return redirect('/LoginBar')
+    
+    return render_template("login.html")
+        
+
 
 @app.route("/download/<filename>")
 def download_file(filename):
     return send_from_directory(app.config['OUTPUT_FOLDER'], filename, as_attachment=True)
 
 # ------------------ Run ------------------
-def start_flask(**kwargs):
-    app.run(**kwargs)
+# def start_flask(**kwargs):
+#     app.run(**kwargs)
 
 # This is the new main entry point for the desktop app
 # if __name__ == "__main__":
