@@ -91,6 +91,12 @@
     .calendar .day.disabled { color: #ccc; cursor: not-allowed; }
     .dark-mode .calendar .day.disabled { color: #555; }
     
+    
+    .live-preview-container { width: 50%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); background: var(--card-background-light); display: none; flex-direction: column; height: 800px; padding: 20px;}
+    .dark-mode .live-preview-container { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+    .card-container.started { width: 50%; max-width: none; margin: 0; }
+    .main-container.started { flex-direction: row; gap: 20px; padding: 20px; }
+
     /* NEW: Upgraded Summary Row Styles */
     #summaryContainer { width: 100%; max-width: 700px; margin-top: 20px; }
     .summary-card { padding: 15px; background: var(--summary-bg-light); border-radius: 8px; margin-bottom: 10px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border-left: 5px solid var(--accent-color); }
@@ -250,6 +256,7 @@
       }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 </head>
 <body>
 
@@ -268,15 +275,13 @@
     </div>
   </header>
 
-  <div class="main-container">
-    <main class="card-container">
+  <div class="main-container" id="mainContainer">
+    <main class="card-container" id="cardContainer">
       <h2>Seat Allocation Input</h2>
 
       <div id="initialStep" class="form-section">
         <div class="num-inputs-container">
-          <label for="numInputs">Number of Exam Papers</label>
           <div class="num-inputs-group">
-            <input type="number" id="numInputs" min="1" value="1">
             <button class="action-button" onclick="startWizard()">Start</button>
           </div>
         </div>
@@ -286,8 +291,12 @@
         <div id="inputsContainer"></div>
         <div id="summaryContainer"></div>
       </div>
-      
     </main>
+
+    <div id="livePreviewContainer" class="live-preview-container">
+        <h2>Live Preview</h2>
+        <iframe id="pdfPreviewIframe" src="" width="100%" height="100%" style="border: none;"></iframe>
+    </div>
   </div>
 
   <div class="calendar" id="calendar"></div>
@@ -390,32 +399,49 @@
   let isEditing = false;
   let editingIndex = -1;
 
+  const socket = io({autoConnect: false});
+  socket.on('allocation_result', function(data) {
+      if(data.status === 'success') {
+          document.getElementById('pdfPreviewIframe').src = data.pdf_url;
+      } else {
+          showCustomAlert(data.message || 'Error generating preview', 'error', 'Error');
+      }
+  });
+  socket.on('finish_result', function(data) {
+      if(data.status === 'success') {
+          document.getElementById('pdfPreviewIframe').src = data.pdf_url;
+          window.location.href = data.download_url;
+      } else {
+          showCustomAlert(data.message || 'Error finishing allocation', 'error', 'Error');
+      }
+  });
+
   function startWizard() {
-    totalPapers = parseInt(document.getElementById("numInputs").value, 10);
-    if (isNaN(totalPapers) || totalPapers < 1) {
-      showCustomAlert("Please enter a valid number of papers.", 'error', 'Input Error');
-      return;
-    }
+    socket.connect();
     currentPaperIndex = 0;
     allPapersData = [];
     summaryContainer.innerHTML = "";
     initialStep.style.display = "none";
     wizardStep.style.display = "block";
+    document.getElementById("mainContainer").classList.add("started");
+    document.getElementById("cardContainer").classList.add("started");
+    document.getElementById("livePreviewContainer").style.display = "flex";
     showCurrentPaperForm();
+  }
+  
+  function finishAllocation() {
+    socket.emit('finish_allocation');
   }
 
   function showCurrentPaperForm() {
     inputsContainer.innerHTML = "";
-    if (currentPaperIndex >= totalPapers && !isEditing) {
-      showFinalSummary();
-      return;
-    }
+
     const i = isEditing ? editingIndex : currentPaperIndex;
     const total = isEditing ? allPapersData.length : totalPapers;
     const div = document.createElement("div");
     div.classList.add("form-section");
-    const buttonText = isEditing ? "Save Changes" : (currentPaperIndex === totalPapers - 1) ? "Finish & Review" : "Save & Next Paper";
-    const headerText = isEditing ? `Editing Paper ${i + 1} of ${total}` : `Paper ${allPapersData.length + 1} of ${total} Details`;
+    const buttonText = isEditing ? "Save Changes" : "Next";
+    const headerText = isEditing ? `Editing Paper ${i + 1}` : `Paper ${allPapersData.length + 1} Details`;
     div.innerHTML = `
       <h3>${headerText}</h3>
       <label>Date:</label>
@@ -449,7 +475,10 @@
         <div class="selected-rooms"></div>
         <select class="room-options"><option value="">--Select Room--</option></select>
       </div>
-      <button class="action-button" style="margin-top: 25px;" onclick="handleNextClick()">${buttonText}</button>
+      <div style="display: flex; gap: 10px; margin-top: 25px;">
+        <button class="action-button" onclick="finishAllocation()">Done</button>
+        <button class="action-button" onclick="handleNextClick()">${buttonText}</button>
+      </div>
       ${removedPapers.length > 0 ? '<button class="action-button" style="margin-top: 10px;" onclick="undoRemove()">Undo Remove</button>' : ''}
     `;
     inputsContainer.appendChild(div);
@@ -921,6 +950,10 @@
       renderSummaryRow(paperData, allPapersData.length - 1);
       currentPaperIndex++;
     }
+    
+    // Emit to websocket for allocation and preview
+    socket.emit('allocate_paper', paperData);
+    
     showCurrentPaperForm();
   }
 

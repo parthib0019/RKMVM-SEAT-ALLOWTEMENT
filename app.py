@@ -12,6 +12,11 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from io import BytesIO
+
+from flask_socketio import SocketIO, emit
+from flask import request
+import time
+
 import webview
 import json
 
@@ -32,7 +37,12 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["OUTPUT_FOLDER"] = OUTPUT_FOLDER
+
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+socketio = SocketIO(app, async_mode='threading')
+
+active_sessions = {}
+
 
 # --- Database Connection Management ---
 with app.app_context():
@@ -434,6 +444,77 @@ def LogIn():
         
 
 
+@app.route("/preview/<filename>")
+def preview_file(filename):
+    return send_from_directory(app.config['OUTPUT_FOLDER'], filename)
+
+@socketio.on('connect')
+def handle_connect():
+    print("Client connected:", request.sid)
+    active_sessions[request.sid] = {'totalRooms': {}}
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print("Client disconnected:", request.sid)
+    active_sessions.pop(request.sid, None)
+
+@socketio.on('allocate_paper')
+def handle_allocate_paper(data):
+    sid = request.sid
+    session_data = active_sessions.get(sid)
+    if not session_data:
+        emit('allocation_result', {'status': 'error', 'message': 'Session expired. Please reload.'})
+        return
+        
+    totalRooms = session_data['totalRooms']
+    date = data.get('date', '')
+    rooms = list(data.get('rooms', []))
+    paper = data.get('paperName', '')
+    year = data.get('year', '')
+    subject = data.get('subject', '')
+    separation = int(data.get('separation', 1))
+    rolls = list(data.get('_rolls', []))
+    
+    while rolls and rooms:
+        room_key = f"{rooms[0]}_{date.replace('/', '-')}"
+        if room_key in totalRooms:
+            seat_matrix = totalRooms[room_key][0]
+        else:
+            seat_matrix = get_room_info(rooms[0])
+            if not seat_matrix: 
+                rooms.pop(0)
+                continue
+                
+        prev_len = len(rolls)
+        seat_matrix, rolls = allocate_seats(seat_matrix, rolls, paper, year, separation, subject)
+        totalRooms[room_key] = (seat_matrix, date)
+        
+        if len(rolls) == prev_len:
+            print(f"⚠️ Cannot place remaining rolls in {rooms[0]}")
+            rooms.pop(0)
+            
+    pdf_filename = f"preview_{sid}.pdf"
+    pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], pdf_filename)
+    export_pdf(pdf_path, totalRooms)
+    
+    emit('allocation_result', {'status': 'success', 'pdf_url': f'/preview/{pdf_filename}?t={time.time()}'})
+
+@socketio.on('finish_allocation')
+def handle_finish_allocation():
+    sid = request.sid
+    session_data = active_sessions.get(sid)
+    if not session_data:
+        emit('finish_result', {'status': 'error', 'message': 'Session expired'})
+        return
+        
+    pdf_filename = f"Final_Allocation_{sid}.pdf"
+    pdf_path = os.path.join(app.config['OUTPUT_FOLDER'], pdf_filename)
+    if session_data['totalRooms']:
+        export_pdf(pdf_path, session_data['totalRooms'])
+    
+    emit('finish_result', {'status': 'success', 'pdf_url': f'/preview/{pdf_filename}?t={time.time()}', 'download_url': f'/download/{pdf_filename}'})
+
+
 @app.route("/download/<filename>")
 def download_file(filename):
     return send_from_directory(app.config['OUTPUT_FOLDER'], filename, as_attachment=True)
@@ -462,7 +543,11 @@ def download_file(filename):
 #         browser_path=browser_path, # This tells the app where to find the browser
 #     ).run()
 
+# if __name__ == "__main__":
+#     webview.settings['ALLOW_DOWNLOADS'] = True
+#     webview.create_window("SARA", app, height=900, width=1200)
+#     webview.start(icon="static/img/SARA-FAVICON.ico")
+
 if __name__ == "__main__":
-    webview.settings['ALLOW_DOWNLOADS'] = True
-    webview.create_window("SARA", app, height=900, width=1200)
-    webview.start(icon="static/img/SARA-FAVICON.ico")
+    app.run(debug=False)
+    
